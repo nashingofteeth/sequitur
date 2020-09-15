@@ -24,7 +24,6 @@
 # ffmpeg -i gad.mov -vcodec libx264 -crf 25 -pix_fmt yuv420p gad.mp4;
 
 # git add encode.sh scripts _old;
-git add .;
 git commit -m "test";
 git push origin master;
 
