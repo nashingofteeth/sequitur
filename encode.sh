@@ -1,11 +1,13 @@
 #!/bin/bash
-npm install resemblejs mz fs web-audio-api underscore;
+# npm install resemblejs mz fs web-audio-api underscore;
+rm -r temp/frames/ exports/ temp/diffs.txt temp/seq.txt temp/wave.txt
+touch temp/diffs.txt temp/seq.txt temp/wave.txt;
+mkdir temp/frames/ exports/;
 
 # ffmpeg -i input/1928EtudessurParis.avi -qscale:v 2 temp/frames/%d.jpg;
 # node scripts/selector.js;
 # ffmpeg -f concat -i temp/seq.txt -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r 24 input/video.mov -y;
 
-# rm -r temp/frames/; mkdir temp/frames/;
 # ffmpeg -i input/video.mov -vf scale=-1:240 -qscale:v 2 temp/frames/%d.jpg;
 # ffmpeg -i input/video.mov -vf scale=-1:720 -qscale:v 2 temp/frames/%d.jpg;
 
@@ -20,5 +22,10 @@ npm install resemblejs mz fs web-audio-api underscore;
 
 # ffmpeg -i exports/gad.mp4 -an -filter "minterpolate='mi_mode=mci:fps=60:scd=none'" gad_60fps.mp4 -y;
 # ffmpeg -i gad.mov -vcodec libx264 -crf 25 -pix_fmt yuv420p gad.mp4;
+
+# git add encode.sh scripts _old;
+git add .;
+git commit -m "$(dirname "$dir")";
+git push origin master;
 
 osascript -e 'display notification "encoding finished!" with title "GAD"';
