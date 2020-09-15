@@ -1,8 +1,8 @@
 #!/bin/bash
 # npm install resemblejs mz fs web-audio-api underscore;
-rm -r temp/frames/ exports/ temp/diffs.txt temp/seq.txt temp/wave.txt
-touch temp/diffs.txt temp/seq.txt temp/wave.txt;
-mkdir temp/frames/ exports/;
+# rm -r temp/frames/ exports/ temp/diffs.txt temp/seq.txt temp/wave.txt
+# touch temp/diffs.txt temp/seq.txt temp/wave.txt;
+# mkdir temp/frames/ exports/;
 
 # ffmpeg -i input/1928EtudessurParis.avi -qscale:v 2 temp/frames/%d.jpg;
 # node scripts/selector.js;
@@ -25,7 +25,7 @@ mkdir temp/frames/ exports/;
 
 # git add encode.sh scripts _old;
 git add .;
-git commit -m "$(dirname "$dir")";
+git commit -m "test";
 git push origin master;
 
 osascript -e 'display notification "encoding finished!" with title "GAD"';
