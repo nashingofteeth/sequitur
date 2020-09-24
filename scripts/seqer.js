@@ -1,14 +1,14 @@
 const fs = require("mz/fs");
 var out = '', obj = [], diffs = [], unsortedDiffs = [], usedKeys = [], levels = [], useTally = [], sortedLevels = [],
-    previousDiff = 100, previousK = 0, frameCounter = 0, k = 6,
-    defaultFrameRate = 60, sampleRate = 1/defaultFrameRate, skipLevels = Math.round(sampleRate/(1/120));
+    previousDiff = 100, previousK = 0, frameCounter = 0, k = 571,
+    defaultFrameRate = 24, sampleRate = 1/defaultFrameRate, skipLevels = Math.round(sampleRate/(1/120));
 
 fs.writeFile('temp/seq.txt', '', function (err) {
   if (err) throw err;
   console.log('initiated!');
 });
 
-var offset = 106; // number of offset frames (120fps)
+var offset = 0; // number of offset frames (120fps)
 
 fs.readFile('temp/wave.txt',
     function(err, data) {
@@ -48,7 +48,7 @@ fs.readFile('temp/diffs.txt',
             sort();
         }, 100);
 });
-
+console.log(obj.length);
 function sort() {
 
 // INITALIZED MISC VARIABLES
@@ -101,15 +101,15 @@ function sort() {
             useMax = 1;
             reuseSpacing = levels.length;
         }
-        useMax = levels.length; //number of loops
-        reuseSpacing = 6; //length of loops
+        // useMax = levels.length; //number of loops
+        reuseSpacing = 1; //length of loops
 
         diffRangeMax = 1;
-        diffRangeMin = 0.5;
+        diffRangeMin = 0.0;
         diffRange = diffRangeMin+(((diffRangeMax-diffRangeMin)*(previousLevel)));
         // diffRange = diffRangeMin+((diffRangeMax-diffRangeMin)*(((levels.length/2)-Math.abs((levels.length/2)-l))/(levels.length/2))); // the higher the distance from center, the lower the percentage
         // diffRange=1;
-        var diffIndex = Math.floor(((poolSize-1)*diffRange)*((currentLevel*boost).toFixed(1))); // .toFixed(1)
+        var diffIndex = Math.floor(((poolSize-1)*diffRange)*((currentLevel*boost))); // .toFixed(1)
 
         changeThresholdMax = 0.0;
         changeThresholdMin = 0.0;
@@ -168,7 +168,7 @@ function sort() {
             if (
                 (useTally[nextFrame][2] == 0 || l-useTally[nextFrame][2] > reuseSpacing)
                 && useTally[nextFrame][1] < useMax
-                && (nextFrame > maxBehind && nextFrame < maxAhead)
+                // && (nextFrame > maxBehind && nextFrame < maxAhead)
             )
                 nextUnusedFrame = nextFrame;
 
