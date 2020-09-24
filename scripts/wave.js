@@ -39,7 +39,7 @@ function decodeSoundFile(soundfile){
  * @return {[type]}            [description]
  */
 function findPeaks(pcmdata, samplerate){
-  var interval = 0.00834 * 1000 ; index = 0 ;
+  var interval = (1/120) * 1000 ; index = 0 ;
   // 120fps = 0.00834, 60fps = 0.01668, 24fps = 0.0417
   var step = Math.round( samplerate * (interval/1000) );
   var max = 0 ;

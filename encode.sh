@@ -11,11 +11,11 @@
 # ffmpeg -i input/video.mov -vf scale=-1:240 -qscale:v 2 temp/frames/%d.jpg;
 # ffmpeg -i input/video.mov -vf scale=-1:720 -qscale:v 2 temp/frames/%d.jpg;
 
-node scripts/differ.js;
+# node scripts/differ.js;
 # node scripts/wave.js > temp/wave.txt;
-# node scripts/seqer.js;
+node scripts/seqer.js;
 
-# ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf scale=320x240 -vcodec libx264 -crf 5 -r 60 -pix_fmt yuv420p exports/"invocation_$(date +%Y%m%d%H%M)".mp4 -y;
+ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf scale=320x240 -vcodec libx264 -crf 5 -r 60 -pix_fmt yuv420p exports/"invocation_$(date +%Y%m%d%H%M)".mp4 -y;
 # ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf subtitles=input/text.ass,scale=-1:720 -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r 60 exports/"invocation_$(date +%Y%m%d%H%M)".mov -y;
 
 # ffmpeg -i exports/invocation_xxxxxxxxxxxx.mov -an -filter "minterpolate='mi_mode=mci:fps=60:scd=none'" invocation_xxxxxxxxxxxx_interpolated.mov -y;
