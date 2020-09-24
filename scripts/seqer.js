@@ -1,12 +1,14 @@
 const fs = require("mz/fs");
 var out = '', obj = [], diffs = [], unsortedDiffs = [], usedKeys = [], levels = [], useTally = [], sortedLevels = [],
     previousDiff = 100, previousK = 0, frameCounter = 0, k = 6,
-    defaultFrameRate = 30, sampleRate = 1/defaultFrameRate, skipLevels = Math.round(sampleRate/(1/120));
+    defaultFrameRate = 60, sampleRate = 1/defaultFrameRate, skipLevels = Math.round(sampleRate/(1/120));
 
 fs.writeFile('temp/seq.txt', '', function (err) {
   if (err) throw err;
-  console.log('written!');
+  console.log('initiated!');
 });
+
+var offset = 106; // number of offset frames (120fps)
 
 fs.readFile('temp/wave.txt',
     function(err, data) {
@@ -15,9 +17,21 @@ fs.readFile('temp/wave.txt',
         var text = data.toString('utf8');
 
         var levelsReg = /(?<=\ ).*/g, levelsArray = text.match(levelsReg);
+
+        var offsetInterval = Math.round(levelsArray.length/offset);
+        var offsetLocation = offsetInterval;
+
+        // console.log(offset/levelsArray.length); // ratio of length to drift (0.0012169221055048506)
+
+        // sync drift correction
         for (i in levelsArray) {
             levels.push(levelsArray[i]);
             sortedLevels.push(levelsArray[i]);
+
+            if (i == offsetLocation) {
+                levels.push(levelsArray[i]);
+                offsetLocation = offsetLocation+offsetInterval;
+            }
         }
 });
 
@@ -42,7 +56,7 @@ function sort() {
 
     sortedLevels.sort(function(a, b){return b-a});
     var levelsMax = sortedLevels[0];
-    var normalize = 1/levelsMax;
+    var boost = 1/levelsMax;
 
     for (i in obj) useTally.push([i, 0, 0]);
 
@@ -52,7 +66,7 @@ function sort() {
 // OUTPUT FRAME
         frameCounter++;
         var progress = l/levels.length;
-        console.log(Math.round(progress*100)+"%"+" ("+Math.round(frameCounter/24)+"s, "+frameCounter+"f, "+sampleRate.toFixed(4)+"d)");
+        console.log(Math.round(progress*100)+"%"+" ("+Math.round(frameCounter/defaultFrameRate)+"s, "+frameCounter+"f, "+sampleRate.toFixed(4)+"d)");
 
         out += "file 'frames/" + (k+1) + ".jpg'\n" +
                      "duration " + sampleRate + "\n";
@@ -87,29 +101,29 @@ function sort() {
             useMax = 1;
             reuseSpacing = levels.length;
         }
-        // useMax = levels.length; //number of loops
-        reuseSpacing = 120; //length of loops
+        useMax = levels.length; //number of loops
+        reuseSpacing = 6; //length of loops
 
-        diffRangeMax = 1.6;
-        diffRangeMin = 0.0;
+        diffRangeMax = 1;
+        diffRangeMin = 0.5;
         diffRange = diffRangeMin+(((diffRangeMax-diffRangeMin)*(previousLevel)));
         // diffRange = diffRangeMin+((diffRangeMax-diffRangeMin)*(((levels.length/2)-Math.abs((levels.length/2)-l))/(levels.length/2))); // the higher the distance from center, the lower the percentage
         // diffRange=1;
-        var diffIndex = Math.floor(((poolSize-1)*diffRange)*((currentLevel*normalize)));
+        var diffIndex = Math.floor(((poolSize-1)*diffRange)*((currentLevel*boost).toFixed(1))); // .toFixed(1)
 
         changeThresholdMax = 0.0;
-        changeThresholdMin = 0.01;
+        changeThresholdMin = 0.0;
         changeThreshold = changeThresholdMin+(((changeThresholdMax-changeThresholdMin)*(previousLevel)));
         // changeThreshold = 0.0;
 
         skipMax = 1;
         skipMin = 1;
-        skipFrames = Math.round(skipMin+(((skipMax-skipMin)*(currentLevel*normalize))));
+        skipFrames = Math.round(skipMin+(((skipMax-skipMin)*(currentLevel*boost))));
 
 
         maxPlayAroundRange = poolSize;
         minPlayAroundRange = (reuseSpacing/120)*defaultFrameRate*2;
-        playAroundRange = Math.round(minPlayAroundRange+(((maxPlayAroundRange-minPlayAroundRange)*(currentLevel*normalize))));
+        playAroundRange = Math.round(minPlayAroundRange+(((maxPlayAroundRange-minPlayAroundRange)*(currentLevel*boost))));
         // playAroundRange = 200;
 
         maxAhead = Math.round((obj.length-1)*(l/levels.length)) + Math.round(playAroundRange/2);
@@ -154,13 +168,13 @@ function sort() {
             if (
                 (useTally[nextFrame][2] == 0 || l-useTally[nextFrame][2] > reuseSpacing)
                 && useTally[nextFrame][1] < useMax
-                // && (nextFrame > maxBehind && nextFrame < maxAhead)
+                && (nextFrame > maxBehind && nextFrame < maxAhead)
             )
                 nextUnusedFrame = nextFrame;
 
             else findNextUnusedFrame(a,b);
         }
-
+        randomLevel = Math.floor(((poolSize-1)*diffRange)*((Math.floor(Math.random() * 10000) + 0)/10000));
         findNextUnusedFrame(k,diffIndex); //diffIndex
         k = nextUnusedFrame;
 
@@ -182,7 +196,7 @@ function sort() {
 
         frameRates = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 24, 30, 40, 60, 60];
         var sampleRateMin = 12, sampleRateMax = frameRates.length-1;
-        frameRateIndex=Math.round(sampleRateMin+((sampleRateMax-sampleRateMin)*(currentLevel*normalize)));
+        frameRateIndex=Math.round(sampleRateMin+((sampleRateMax-sampleRateMin)*(currentLevel*boost)));
         // sampleRate = 1/parseInt(frameRates[frameRateIndex]);
         skipLevels = Math.round(sampleRate/(1/120));
         l=l+(skipLevels-1);
@@ -203,6 +217,6 @@ function sort() {
 function output(a) {
     fs.appendFileSync('temp/seq.txt', a, function (err) {
       if (err) throw err;
-      console.log('written!');
+      console.log('finished!');
     });
 }
