@@ -1,14 +1,14 @@
 const fs = require("mz/fs");
 var out = '', obj = [], diffs = [], unsortedDiffs = [], usedKeys = [], levels = [], useTally = [], sortedLevels = [],
-    previousDiff = 100, previousK = 0, frameCounter = 0, k = 571,
-    defaultFrameRate = 24, sampleRate = 1/defaultFrameRate, skipLevels = Math.round(sampleRate/(1/120));
+    previousDiff = 100, previousK = 0, frameCounter = 0, k = 0,
+    defaultFrameRate = 60, sampleRate = 1/defaultFrameRate, skipLevels = Math.round(sampleRate/(1/120));
 
 fs.writeFile('temp/seq.txt', '', function (err) {
   if (err) throw err;
   console.log('initiated!');
 });
 
-var offset = 0; // number of offset frames (120fps)
+var offset = 104; // number of offset frames (120fps)
 
 fs.readFile('temp/wave.txt',
     function(err, data) {
@@ -48,7 +48,7 @@ fs.readFile('temp/diffs.txt',
             sort();
         }, 100);
 });
-console.log(obj.length);
+
 function sort() {
 
 // INITALIZED MISC VARIABLES
@@ -94,7 +94,7 @@ function sort() {
 
 // PARAMETERS
         if (levels.length > obj.length) {
-            useMax = Math.ceil(((levels.length/skipLevels)/obj.length)*1);
+            useMax = Math.ceil(((levels.length/skipLevels)/obj.length)*1.2);
             reuseSpacing = levels.length/Math.ceil(((levels.length/skipLevels)/obj.length));
         }
         else {
@@ -120,9 +120,10 @@ function sort() {
         skipMin = 1;
         skipFrames = Math.round(skipMin+(((skipMax-skipMin)*(currentLevel*boost))));
 
-
         maxPlayAroundRange = poolSize;
-        minPlayAroundRange = (reuseSpacing/120)*defaultFrameRate*2;
+        minPlayAroundRange = reuseSpacing*2;
+        // minPlayAroundRange = poolSize;
+
         playAroundRange = Math.round(minPlayAroundRange+(((maxPlayAroundRange-minPlayAroundRange)*(currentLevel*boost))));
         // playAroundRange = 200;
 
@@ -194,10 +195,10 @@ function sort() {
 
         // if (currentLevel > 0.15) sampleRate = 1/60;
 
-        frameRates = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 24, 30, 40, 60, 60];
-        var sampleRateMin = 12, sampleRateMax = frameRates.length-1;
+        frameRates = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 24, 30, 40, 60, 60, 60, 60];
+        var sampleRateMin = 11, sampleRateMax = frameRates.length-1; // values are indexes no frame rates!
         frameRateIndex=Math.round(sampleRateMin+((sampleRateMax-sampleRateMin)*(currentLevel*boost)));
-        // sampleRate = 1/parseInt(frameRates[frameRateIndex]);
+        sampleRate = 1/parseInt(frameRates[frameRateIndex]);
         skipLevels = Math.round(sampleRate/(1/120));
         l=l+(skipLevels-1);
 
