@@ -19,6 +19,6 @@ Style: GAD,Mrs Eaves,10,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-Dialogue: 0,0:02:50.00,0:02:53.00,GAD,,0,0,0,,Video:\NMOVIETITLE (1926)\NDirected by NAME\NPhotographed by NAME\NFeaturing NAME
+Dialogue: 0,0:02:50.00,0:02:53.00,GAD,,0,0,0,,Video:\N{\i1}MOVIETITLE{\i0} (YEAR)\NDirected by NAME\NPhotographed by NAME\NFeaturing NAME
 Dialogue: 0,0:02:53.00,0:02:56.00,GAD,,0,0,0,,Music:\N{\i1}WORK: {\i0} SECTION\NPerformed by NAME\NWritten by NAME\NProvided by NAME
 Dialogue: 0,0:02:56.00,0:03:00.00,GAD,,0,0,0,,Invoked by \NThe Argent Spiritualist Society \Nof the Hollow Ocean
