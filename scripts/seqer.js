@@ -8,7 +8,7 @@ fs.writeFile('temp/seq.txt', '', function (err) {
   console.log('initiated!');
 });
 
-var offset = 104; // number of offset frames (120fps)
+var offsetLengthRatio = 0.00111; // offset frames (120fps)/levelsArray.length (recorded numbers: 0.0012169221055048506, 0.0011149706248123848)
 
 fs.readFile('temp/wave.txt',
     function(err, data) {
@@ -18,10 +18,9 @@ fs.readFile('temp/wave.txt',
 
         var levelsReg = /(?<=\ ).*/g, levelsArray = text.match(levelsReg);
 
+        var offset = Math.round(offsetLengthRatio*levelsArray.length);
         var offsetInterval = Math.round(levelsArray.length/offset);
         var offsetLocation = offsetInterval;
-
-        // console.log(offset/levelsArray.length); // ratio of length to drift (0.0012169221055048506)
 
         // sync drift correction
         for (i in levelsArray) {
@@ -102,19 +101,19 @@ function sort() {
             reuseSpacing = levels.length;
         }
         // useMax = levels.length; //number of loops
-        reuseSpacing = 1; //length of loops
+        reuseSpacing = 20; //length of loops
 
-        diffRangeMax = 1;
+        diffRangeMax = 1.7;
         diffRangeMin = 0.0;
         diffRange = diffRangeMin+(((diffRangeMax-diffRangeMin)*(previousLevel)));
         // diffRange = diffRangeMin+((diffRangeMax-diffRangeMin)*(((levels.length/2)-Math.abs((levels.length/2)-l))/(levels.length/2))); // the higher the distance from center, the lower the percentage
         // diffRange=1;
-        var diffIndex = Math.floor(((poolSize-1)*diffRange)*((currentLevel*boost))); // .toFixed(1)
+        var diffIndex = Math.floor(((poolSize-1)*diffRange)*((currentLevel*boost).toFixed(1))); // .toFixed(1)
 
         changeThresholdMax = 0.0;
-        changeThresholdMin = 0.0;
+        changeThresholdMin = 0.01;
         changeThreshold = changeThresholdMin+(((changeThresholdMax-changeThresholdMin)*(previousLevel)));
-        // changeThreshold = 0.0;
+        changeThreshold = -1;
 
         skipMax = 1;
         skipMin = 1;
@@ -141,7 +140,7 @@ function sort() {
                 if (tooFarAhead) b--;
                 else b++;
 
-                if(b>poolSize-2) tooFarAhead=true;
+                if (b>poolSize-2) tooFarAhead=true;
 
                 // console.log('NUD!!!!!!!!!!');
             }
@@ -154,7 +153,7 @@ function sort() {
 
                 var nextSim = diffs[simFrameKey][0]-1;
 
-                if (unsortedDiffs[nextChrono][1] - previousDiff[1] > 10) {
+                if (unsortedDiffs[nextChrono][1] - previousDiff[1] > 80) {
                     nextFrame = nextSim;
                     simFrameKey++;
 
@@ -195,7 +194,7 @@ function sort() {
 
         // if (currentLevel > 0.15) sampleRate = 1/60;
 
-        frameRates = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 24, 30, 40, 60, 60, 60, 60];
+        frameRates = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 24, 30, 40, 60, 60, 60, 60, 60];
         var sampleRateMin = 11, sampleRateMax = frameRates.length-1; // values are indexes no frame rates!
         frameRateIndex=Math.round(sampleRateMin+((sampleRateMax-sampleRateMin)*(currentLevel*boost)));
         sampleRate = 1/parseInt(frameRates[frameRateIndex]);
