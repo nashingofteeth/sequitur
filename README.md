@@ -1,2 +1,2 @@
-# GAD
-graphic associations from difference
+# SEQUITUR
+conforms video frames to audio amplitude
