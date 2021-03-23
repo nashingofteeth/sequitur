@@ -1,6 +1,7 @@
 const fs = require("mz/fs");
 const { exec } = require("child_process");
 
+encoding = 0;
 isFinalRender = false;
 
 previewResolution = 240;
@@ -15,7 +16,7 @@ else framesType = previewFrames;
 
 var out = '', obj = [], diffs = [], unsortedDiffs = [], usedKeys = [], fpsTally = [], levels = [], frameTally = [], sortedLevels = [],
     previousDiff = 100,  frameCounter = 0, totalDuration = 0, previousK = 0, k = 0,
-    frameRate = 30, programFrameRate = 240, duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate)),
+    frameRate = 24, programFrameRate = 240, duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate)),
     frameRates = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 24, 30, 40, 48, 60], // divisors of 240
     durationMin = frameRates.indexOf(frameRate), frameRatesWeighted = 7,
     offsetLengthRatio = 0.001374085826124; // offset at end of video (240fps)/levelsArray.length
@@ -25,7 +26,7 @@ function sequence() {
 
 // INITALIZE MISC VARIABLES
     k = Math.floor((Math.random() * (obj.length-1)) + 0);
-    k = 635;
+    // k = 1;
     firstFrame = k;
 
     sortedLevels.sort(function(a, b){return b-a});
@@ -84,7 +85,7 @@ function sequence() {
             reuseSpacing = levels.length;
         }
         useMax = levels.length; //number of loops
-        reuseSpacing = 60; //length of loops
+        reuseSpacing = 1; //length of loops
 
         diffRangeMax = 1.0;
         diffRangeMin = 0.3;
@@ -112,7 +113,10 @@ function sequence() {
         maxAhead = Math.round((obj.length-1)*(l/levels.length)) + Math.round(playAroundRange/2);
         maxBehind = Math.round((obj.length-1)*(l/levels.length)) - Math.round(playAroundRange/2);
 
-        if (currentLevel < 0.3) { // 0.0015
+        playAroundThreshold = Math.random();
+        // playAroundThreshold = 0.3;
+
+        if (currentLevel < playAroundThreshold) { // 0.0015
             maxAhead = poolSize;
             maxBehind = 0;
         }
@@ -204,10 +208,9 @@ function sequence() {
         if (frameTally[i][1] != 0)
             numberOfFramesUsed++;
 
-    console.log("source audio frames: " + levels.length);
+    console.log("source audio frames: " + Math.round(levels.length/(programFrameRate/frameRates[durationMax])) + " ("+frameRates[durationMax]+"fps)");
     console.log("source video frames: " + obj.length + "\n");
     console.log("video frames used: " + ((numberOfFramesUsed/obj.length)*100).toFixed(2) + "%\n");
-
 
     console.log("first frame: " + (firstFrame+1) + ".jpg");
     console.log("last frame: " + (k+1) + ".jpg\n");
@@ -227,49 +230,49 @@ function outputEncode(a) {
     fs.writeFile('temp/seq.txt', a, function (err) {
       if (err) throw err;
     });
+    if (encoding) {
+	    let current = new Date();
+	    let cYear = current.getFullYear();
+	    let cMonth = ('0'+(current.getMonth() + 1)).slice(-2);
+	    let cDay = ('0'+current.getDate()).slice(-2);
+	    let cHour = ('0'+current.getHours()).slice(-2);
+	    let cMinute = ('0'+current.getMinutes()).slice(-2);
+	    let cSecond = ('0'+current.getSeconds()).slice(-2);
+	    let cDate = cYear + '' + cMonth + '' + cDay;
+	    let cTime = cHour + '' + cMinute + '' + cSecond;
+	    let dateTime = cDate + '' + cTime;
 
-    let current = new Date();
-    let cYear = current.getFullYear();
-    let cMonth = ('0'+(current.getMonth() + 1)).slice(-2);
-    let cDay = ('0'+current.getDate()).slice(-2);
-    let cHour = ('0'+current.getHours()).slice(-2);
-    let cMinute = ('0'+current.getMinutes()).slice(-2);
-    let cSecond = ('0'+current.getSeconds()).slice(-2);
-    let cDate = cYear + '' + cMonth + '' + cDay;
-    let cTime = cHour + '' + cMinute + '' + cSecond;
-    let dateTime = cDate + '' + cTime;
-
-    const previewRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/invocation_"+dateTime+".mp4 -y;",
-          finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf subtitles=input/text.ass,scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/invocation_"+dateTime+".mov -y;";
+	    const previewRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/invocation_"+dateTime+".mp4 -y;",
+	          finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf subtitles=input/text.ass,scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/invocation_"+dateTime+".mov -y;";
 
 
-    if (isFinalRender == true) renderType = finalRender;
-    else renderType = previewRender;
+	    if (isFinalRender == true) renderType = finalRender;
+	    else renderType = previewRender;
 
-    console.log('ENCODING...');
+	    console.log('ENCODING...');
 
-    exec(renderType, (error, stdout, stderr) => {
-        // if (error) {
-        //     console.log(`error: ${error.message}`);
-        //     return;
-        // }
-        // if (stderr) {
-        //     console.log(`stderr: ${stderr}`);
-        //     return;
-        // }
-        // console.log(`stdout: ${stdout}`);
+	    exec(renderType, (error, stdout, stderr) => {
+	        // if (error) {
+	        //     console.log(`error: ${error.message}`);
+	        //     return;
+	        // }
+	        // if (stderr) {
+	        //     console.log(`stderr: ${stderr}`);
+	        //     return;
+	        // }
+	        // console.log(`stdout: ${stdout}`);
 
-        exec("cp sequitur.js temp/log/sequitur_"+dateTime+".js; cp temp/seq.txt temp/log/seq_"+dateTime+".txt;");
-        exec("cp exports/invocation_"+dateTime+".mp4 exports/latest.mp4");
+	        exec("cp sequitur.js temp/log/sequitur_"+dateTime+".js; cp temp/seq.txt temp/log/seq_"+dateTime+".txt;");
+	        // exec("cp exports/invocation_"+dateTime+".mp4 exports/latest.mp4");
 
-        if (fs.existsSync('exports/active0.mp4') && !fs.existsSync('exports/active1.mp4')) exec("cp exports/invocation_"+dateTime+".mp4 exports/active1.mp4");
-        else if (fs.existsSync('exports/active1.mp4') && !fs.existsSync('exports/active0.mp4')) exec("cp exports/invocation_"+dateTime+".mp4 exports/active0.mp4");
-        else exec("cp exports/invocation_"+dateTime+".mp4 exports/active0.mp4;cp exports/invocation_"+dateTime+".mp4 exports/active1.mp4");
+	        if (fs.existsSync('exports/active0.mp4') && !fs.existsSync('exports/active1.mp4')) exec("cp exports/invocation_"+dateTime+".mp4 exports/active1.mp4");
+	        else if (fs.existsSync('exports/active1.mp4') && !fs.existsSync('exports/active0.mp4')) exec("cp exports/invocation_"+dateTime+".mp4 exports/active0.mp4");
+	        else exec("cp exports/invocation_"+dateTime+".mp4 exports/active0.mp4;cp exports/invocation_"+dateTime+".mp4 exports/active1.mp4");
 
-        console.log("DONE");
-        exec("afplay /System/Library/PrivateFrameworks/ScreenReader.framework/Versions/A/Resources/Sounds/DrillOut.aiff");
-    });
-
+	        console.log("DONE");
+	        exec("afplay /System/Library/PrivateFrameworks/ScreenReader.framework/Versions/A/Resources/Sounds/DrillOut.aiff");
+	    });
+	}
 }
 
 // INITIALIZING
