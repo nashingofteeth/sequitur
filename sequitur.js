@@ -2,9 +2,11 @@ const fs = require("mz/fs");
 const { exec } = require("child_process");
 
 encoding = 1;
-isFinalRender = false;
+isFinalRender = 1;
 
 variableFrameRate = 1;
+
+inputNum = 1;
 
 previewResolution = 240;
 finalResolution = 720;
@@ -20,7 +22,7 @@ else framesType = previewFrames;
 
 var out = '', obj = [], diffs = [], unsortedDiffs = [], usedKeys = [], fpsTally = [], levels = [], frameTally = [], sortedLevels = [],
     previousDiff = 100,  frameCounter = 0, totalDuration = 0, previousK = 0, k = 0,
-    frameRate = 24, programFrameRate = 240, duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate)),
+    frameRate = 60, programFrameRate = 240, duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate)),
     frameRates = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 24, 30, 40, 48, 60], // divisors of 240
     durationMin = frameRates.indexOf(frameRate), frameRatesWeighted = 7,
     offsetLengthRatio = 0.001374085826124; // offset at end of video (240fps)/levelsArray.length
@@ -30,7 +32,7 @@ function sequence() {
 
 // INITALIZE MISC VARIABLES
     k = Math.floor((Math.random() * (obj.length-1)) + 0);
-    // k = 1;
+    k = 1905;
     firstFrame = k;
 
     sortedLevels.sort(function(a, b){return b-a});
@@ -95,7 +97,7 @@ function sequence() {
             reuseSpacing = levels.length;
         }
         useMax = levels.length; //number of loops
-        reuseSpacing = 1; //length of loops
+        reuseSpacing = 60; //length of loops
 
         diffRangeMax = 1.0;
         diffRangeMin = 0.0;
@@ -258,7 +260,7 @@ function encode(a) {
     let dateTime = cDate + '' + cTime;
 
     const previewRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/invocation_"+dateTime+".mp4 -y;",
-          finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf subtitles=input/text.ass,scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/invocation_"+dateTime+".mov -y;";
+          finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/invocation_"+dateTime+".mov -y;"; // -vf subtitles=input/text.ass,
 
 
     if (isFinalRender == true) renderType = finalRender;
