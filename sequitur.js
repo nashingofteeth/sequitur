@@ -98,7 +98,7 @@ function sequence() {
         reuseSpacing = 1; //length of loops
 
         diffRangeMax = 1.0;
-        diffRangeMin = 0.3;
+        diffRangeMin = 0.0;
         diffRange = diffRangeMin+(((diffRangeMax-diffRangeMin)*(previousLevel)));
         // diffRange = diffRangeMin+((diffRangeMax-diffRangeMin)*(((levels.length/2)-Math.abs((levels.length/2)-l))/(levels.length/2))); // the higher the distance from center, the lower the percentage
         // diffRange=0.9;
@@ -516,9 +516,9 @@ function analyzeFrames() {
 
     const dir = 'temp/frames/';
     fs.readdir(dir, (err, files) => {
-          // init(files.length);
+          init(files.length);
           // console.log(files.length);
-          init(100);
+          // init(100);
     });
 }
 
