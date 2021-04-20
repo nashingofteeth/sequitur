@@ -2,11 +2,12 @@ const fs = require("mz/fs");
 const { exec } = require("child_process");
 
 encoding = 1;
-isFinalRender = 1;
+isFinalRender = 0;
 
 variableFrameRate = 1;
 
-inputNum = 1;
+// inputNum = 1;
+exclude = [1,1438];
 
 previewResolution = 240;
 finalResolution = 720;
@@ -22,7 +23,7 @@ else framesType = previewFrames;
 
 var out = '', obj = [], diffs = [], unsortedDiffs = [], usedKeys = [], fpsTally = [], levels = [], frameTally = [], sortedLevels = [],
     previousDiff = 100,  frameCounter = 0, totalDuration = 0, previousK = 0, k = 0,
-    frameRate = 60, programFrameRate = 240, duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate)),
+    frameRate = 24, programFrameRate = 240, duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate)),
     frameRates = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 24, 30, 40, 48, 60], // divisors of 240
     durationMin = frameRates.indexOf(frameRate), frameRatesWeighted = 7,
     offsetLengthRatio = 0.001374085826124; // offset at end of video (240fps)/levelsArray.length
@@ -32,7 +33,7 @@ function sequence() {
 
 // INITALIZE MISC VARIABLES
     k = Math.floor((Math.random() * (obj.length-1)) + 0);
-    k = 1905;
+    // k = 1;
     firstFrame = k;
 
     sortedLevels.sort(function(a, b){return b-a});
@@ -97,9 +98,9 @@ function sequence() {
             reuseSpacing = levels.length;
         }
         useMax = levels.length; //number of loops
-        reuseSpacing = 60; //length of loops
+        reuseSpacing = 1; //length of loops
 
-        diffRangeMax = 1.0;
+        diffRangeMax = 0.5;
         diffRangeMin = 0.0;
         diffRange = diffRangeMin+(((diffRangeMax-diffRangeMin)*(previousLevel)));
         // diffRange = diffRangeMin+((diffRangeMax-diffRangeMin)*(((levels.length/2)-Math.abs((levels.length/2)-l))/(levels.length/2))); // the higher the distance from center, the lower the percentage
@@ -127,7 +128,7 @@ function sequence() {
         maxBehind = Math.round((obj.length-1)*(l/levels.length)) - Math.round(playAroundRange/2);
 
         // playAroundThreshold = Math.random();
-        playAroundThreshold = 0.3;
+        playAroundThreshold = 0.9;
 
         if (currentLevel < playAroundThreshold) { // 0.0015
             maxAhead = poolSize;
@@ -176,7 +177,8 @@ function sequence() {
             if (
                 (frameTally[nextFrame][2] == 0 || l-frameTally[nextFrame][2] > reuseSpacing)
                 && frameTally[nextFrame][1] < useMax
-                && (nextFrame > maxBehind && nextFrame < maxAhead) // cannot be enabled with useMax = levels.length
+                && (nextFrame > maxBehind && nextFrame < maxAhead)
+                && (nextFrame < exclude[0]-1 || nextFrame > exclude[1]-1)  // cannot be enabled with useMax = levels.length
             )
                 nextUnusedFrame = nextFrame;
 
