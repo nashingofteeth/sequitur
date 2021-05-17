@@ -2,12 +2,12 @@ const fs = require("mz/fs");
 const { exec } = require("child_process");
 
 encoding = 1;
-isFinalRender = 0;
+isFinalRender = 1;
 
 variableFrameRate = 1;
 
 // inputNum = 1;
-exclude = [1,1438];
+exclude = [0,0];
 
 previewResolution = 240;
 finalResolution = 720;
@@ -23,7 +23,7 @@ else framesType = previewFrames;
 
 var out = '', obj = [], diffs = [], unsortedDiffs = [], usedKeys = [], fpsTally = [], levels = [], frameTally = [], sortedLevels = [],
     previousDiff = 100,  frameCounter = 0, totalDuration = 0, previousK = 0, k = 0,
-    frameRate = 24, programFrameRate = 240, duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate)),
+    frameRate = 60, programFrameRate = 240, duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate)),
     frameRates = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 24, 30, 40, 48, 60], // divisors of 240
     durationMin = frameRates.indexOf(frameRate), frameRatesWeighted = 7,
     offsetLengthRatio = 0.001374085826124; // offset at end of video (240fps)/levelsArray.length
@@ -33,7 +33,7 @@ function sequence() {
 
 // INITALIZE MISC VARIABLES
     k = Math.floor((Math.random() * (obj.length-1)) + 0);
-    // k = 1;
+    // k = 2078;
     firstFrame = k;
 
     sortedLevels.sort(function(a, b){return b-a});
@@ -90,14 +90,14 @@ function sequence() {
 
 // PARAMETERS
         if (levels.length > obj.length) {
-            useMax = Math.ceil(((levels.length/skipLevels)/obj.length)*1);
+            useMax = Math.ceil(((levels.length/skipLevels)/obj.length)*5);
             reuseSpacing = levels.length/Math.ceil(((levels.length/skipLevels)/obj.length))/2;
         }
         else {
             useMax = 1;
             reuseSpacing = levels.length;
         }
-        useMax = levels.length; //number of loops
+        // useMax = levels.length; //number of loops
         reuseSpacing = 1; //length of loops
 
         diffRangeMax = 0.5;
@@ -108,8 +108,8 @@ function sequence() {
 
         var diffIndex = Math.floor((((poolSize-1)*diffRange)*currentLevel).toFixed(diffPrecision)); // .toFixed(1)
 
-        changeThresholdMax = 0.4;
-        changeThresholdMin = 0.01;
+        changeThresholdMax = 0.1;
+        changeThresholdMin = 0.0;
         changeThreshold = changeThresholdMin+(((changeThresholdMax-changeThresholdMin)*(previousLevel)));
         changeThreshold = -1;
 
@@ -128,7 +128,7 @@ function sequence() {
         maxBehind = Math.round((obj.length-1)*(l/levels.length)) - Math.round(playAroundRange/2);
 
         // playAroundThreshold = Math.random();
-        playAroundThreshold = 0.9;
+        playAroundThreshold = 0.3;
 
         if (currentLevel < playAroundThreshold) { // 0.0015
             maxAhead = poolSize;
@@ -154,24 +154,24 @@ function sequence() {
             }
 
             else {
-                // var nextChrono = a+skipFrames;
+                var nextChrono = a+skipFrames;
 
-                // var lastFrame = parseInt(Object.keys(objValues)[Object.keys(objValues).length-2]);
-                // var overflow = nextChrono-lastFrame;
-                // if (nextChrono >= lastFrame) nextChrono = parseInt(Object.keys(objValues)[overflow])-1;
+                var lastFrame = parseInt(Object.keys(objValues)[Object.keys(objValues).length-2]);
+                var overflow = nextChrono-lastFrame;
+                if (nextChrono >= lastFrame) nextChrono = parseInt(Object.keys(objValues)[overflow])-1;
 
-                // var nextSim = diffs[simFrameKey][0]-1;
+                var nextSim = diffs[simFrameKey][0]-1;
 
-                // if (unsortedDiffs[nextChrono][1] - previousDiff[1] > 10) {
-                //     nextFrame = nextSim;
-                //     simFrameKey++;
+                if (unsortedDiffs[nextChrono][1] - previousDiff[1] > 10) {
+                    nextFrame = nextSim;
+                    simFrameKey++;
 
-                //     console.log('SOFTENED CUT!');
-                // }
-                // else {
-                //     nextFrame = nextChrono;
-                //     a++;
-                // }
+                    console.log('SOFTENED CUT!');
+                }
+                else {
+                    nextFrame = nextChrono;
+                    a++;
+                }
             }
 
             if (
