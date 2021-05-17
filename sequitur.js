@@ -2,7 +2,7 @@ const fs = require("mz/fs");
 const { exec } = require("child_process");
 
 encoding = 1;
-isFinalRender = 1;
+isFinalRender = 0;
 
 variableFrameRate = 1;
 
