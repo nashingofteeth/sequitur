@@ -1,39 +1,52 @@
-const fs = require("mz/fs");
-const { exec } = require("child_process");
+track = 75;
+encoding = 0;
+isFinalRender = 0;
 
-encoding = 1;
-isFinalRender = 1;
+diffRangeMax = 1.0;
+diffRangeMin = 0.05;
+
+variableReuseSpacing = 0;
+reuseSpacingMax = 120;
+reuseSpacingMin = 1;
+
+playAroundThreshold = 1.0;
+useMaxThreshold = 1.0;
+reuseSpacingThreshold = 1.0;
 
 variableFrameRate = 1;
 
-// inputNum = 1;
 exclude = [0,0];
 
+frameOffset = 7;
+
+sourceFrameRate = 30;
 previewResolution = 240;
-finalResolution = 720;
+finalResolution = 480;
 exportFPS = 60;
 
 diffPrecision = 5;
 
-const previewFrames = "ffmpeg -i input/video.mov -vf scale=-1:"+previewResolution+" -qscale:v 2 temp/frames/%d.jpg",
-      finalFrames = "ffmpeg -i input/video.mov -vf scale=-1:"+finalResolution+" -qscale:v 2 temp/frames/%d.jpg";
+const previewFrames = "ffmpeg -i input/video" + track + ".mov -vf scale=-1:"+previewResolution+" -qscale:v 2 temp/frames"+track+"/%d.jpg",
+      finalFrames = "ffmpeg -i input/video" + track + ".mov -vf scale=-1:"+finalResolution+" -qscale:v 2 temp/frames"+track+"/%d.jpg"
+      chime = "afplay /System/Library/PrivateFrameworks/ScreenReader.framework/Versions/A/Resources/Sounds/DrillOut.aiff";
 
 if (isFinalRender == true) framesType = finalFrames;
 else framesType = previewFrames;
 
 var out = '', obj = [], diffs = [], unsortedDiffs = [], usedKeys = [], fpsTally = [], levels = [], frameTally = [], sortedLevels = [],
     previousDiff = 100,  frameCounter = 0, totalDuration = 0, previousK = 0, k = 0,
-    frameRate = 60, programFrameRate = 240, duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate)),
+    frameRate = 24, programFrameRate = 240, duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate)),
     frameRates = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 24, 30, 40, 48, 60], // divisors of 240
-    durationMin = frameRates.indexOf(frameRate), frameRatesWeighted = 7,
-    offsetLengthRatio = 0.001374085826124; // offset at end of video (240fps)/levelsArray.length
+    durationMin = frameRates.indexOf(frameRate), frameRatesWeighted = 8;
 
+const fs = require("mz/fs");
+const { exec } = require("child_process");
 
 function sequence() {
 
 // INITALIZE MISC VARIABLES
-    k = Math.floor((Math.random() * (obj.length-1)) + 0);
-    // k = 2078;
+    // k = Math.floor((Math.random() * (obj.length-1)) + 0);
+    // k = 300;
     firstFrame = k;
 
     sortedLevels.sort(function(a, b){return b-a});
@@ -60,7 +73,7 @@ function sequence() {
 
         // console.log(l + " / " + levels.length);
 
-        out += "file 'frames/" + (k+1) + ".jpg'\n" +
+        out += "file 'frames"+track+"/" + (k+1) + ".jpg'\n" +
                      "duration " + duration + "\n";
 
          // k = Math.round((obj.length-1)*(l/levels.length));
@@ -77,9 +90,9 @@ function sequence() {
 
         for (i in objValues) unsortedDiffs.push([i, objValues[i]]);
 
-        var currentLevel = parseFloat(levels[l])*boost;
-        var nextLevel = parseFloat(levels[l+skipLevels])*boost;
-        var previousLevel = parseFloat(levels[l-skipLevels])*boost;
+        var currentLevel = parseFloat(levels[l+skipLevels])*boost;
+        var nextLevel = parseFloat(levels[l+(skipLevels*2)])*boost;
+        var previousLevel = parseFloat(levels[l])*boost;
 
         if (isNaN(currentLevel)) currentLevel = 0;
         if (isNaN(nextLevel)) nextLevel = 0;
@@ -90,23 +103,24 @@ function sequence() {
 
 // PARAMETERS
         if (levels.length > obj.length) {
-            useMax = Math.ceil(((levels.length/skipLevels)/obj.length)*5);
+            useMax = Math.ceil(((levels.length/skipLevels)/obj.length)*1);
             reuseSpacing = levels.length/Math.ceil(((levels.length/skipLevels)/obj.length))/2;
         }
         else {
             useMax = 1;
             reuseSpacing = levels.length;
         }
-        // useMax = levels.length; //number of loops
-        reuseSpacing = 1; //length of loops
+        if (currentLevel < useMaxThreshold) useMax = levels.length; //number of loops
+        if (currentLevel < reuseSpacingThreshold) reuseSpacing = 1; //length of loops
 
-        diffRangeMax = 0.5;
-        diffRangeMin = 0.0;
+        if (variableReuseSpacing) reuseSpacing = reuseSpacingMin+((reuseSpacingMax-reuseSpacingMin)*currentLevel);
+
         diffRange = diffRangeMin+(((diffRangeMax-diffRangeMin)*(previousLevel)));
         // diffRange = diffRangeMin+((diffRangeMax-diffRangeMin)*(((levels.length/2)-Math.abs((levels.length/2)-l))/(levels.length/2))); // the higher the distance from center, the lower the percentage
         // diffRange=0.9;
 
         var diffIndex = Math.floor((((poolSize-1)*diffRange)*currentLevel).toFixed(diffPrecision)); // .toFixed(1)
+        // diffIndex = 1;
 
         changeThresholdMax = 0.1;
         changeThresholdMin = 0.0;
@@ -128,7 +142,6 @@ function sequence() {
         maxBehind = Math.round((obj.length-1)*(l/levels.length)) - Math.round(playAroundRange/2);
 
         // playAroundThreshold = Math.random();
-        playAroundThreshold = 0.3;
 
         if (currentLevel < playAroundThreshold) { // 0.0015
             maxAhead = poolSize;
@@ -153,26 +166,26 @@ function sequence() {
 
             }
 
-            else {
-                var nextChrono = a+skipFrames;
+            // else {
+            //     var nextChrono = a+skipFrames;
 
-                var lastFrame = parseInt(Object.keys(objValues)[Object.keys(objValues).length-2]);
-                var overflow = nextChrono-lastFrame;
-                if (nextChrono >= lastFrame) nextChrono = parseInt(Object.keys(objValues)[overflow])-1;
+            //     var lastFrame = parseInt(Object.keys(objValues)[Object.keys(objValues).length-2]);
+            //     var overflow = nextChrono-lastFrame;
+            //     if (nextChrono >= lastFrame) nextChrono = parseInt(Object.keys(objValues)[overflow])-1;
 
-                var nextSim = diffs[simFrameKey][0]-1;
+            //     var nextSim = diffs[simFrameKey][0]-1;
 
-                if (unsortedDiffs[nextChrono][1] - previousDiff[1] > 10) {
-                    nextFrame = nextSim;
-                    simFrameKey++;
+            //     if (unsortedDiffs[nextChrono][1] - previousDiff[1] > 10) {
+            //         nextFrame = nextSim;
+            //         simFrameKey++;
 
-                    console.log('SOFTENED CUT!');
-                }
-                else {
-                    nextFrame = nextChrono;
-                    a++;
-                }
-            }
+            //         console.log('SOFTENED CUT!');
+            //     }
+            //     else {
+            //         nextFrame = nextChrono;
+            //         a++;
+            //     }
+            // }
 
             if (
                 (frameTally[nextFrame][2] == 0 || l-frameTally[nextFrame][2] > reuseSpacing)
@@ -219,26 +232,30 @@ function sequence() {
     console.clear();
     console.log('A PATH HAS BEEN FOUND\n');
 
+    console.log('VIDEO TRACK: ' + track + '\n');
+
     numberOfFramesUsed = 0;
     for (i in frameTally)
         if (frameTally[i][1] != 0)
             numberOfFramesUsed++;
 
-    console.log("source audio frames: " + Math.round(levels.length/(programFrameRate/frameRates[durationMax])) + " ("+frameRates[durationMax]+"fps)");
-    console.log("source video frames: " + obj.length + "\n");
+    console.log("SOURCE VIDEO LENGTH: " + obj.length + " frames");
+    console.log("SOURCE AUDIO LENGTH ("+programFrameRate+" Hz): " + levels.length + " samples\n");
 
-    console.log("video frames used: " + ((numberOfFramesUsed/obj.length)*100).toFixed(2) + "%\n");
+    console.log("PROGRAM TIMELINE LENGTH ("+frameRates[durationMax]+"fps): " + Math.round(levels.length/(programFrameRate/frameRates[durationMax])) + " frames\n");
 
-    console.log("first frame: " + (firstFrame+1) + ".jpg");
-    console.log("last frame: " + (k+1) + ".jpg\n");
-    
-    console.log("length: "+Math.round(totalDuration)+" seconds, "+frameCounter+" frames\n");
+    console.log("VIDEO FRAMES USED: " + ((numberOfFramesUsed/obj.length)*100).toFixed(2) + "%\n");
 
-    console.log("FPS distribution:");
+    console.log("FIRST FRAME: " + (firstFrame+1) + ".jpg");
+    console.log("LAST FRAME: " + (k+1) + ".jpg\n");
+
+    console.log("FPS DISTRIBUTION:");
     for (t in fpsTally)
         if (fpsTally[t][1] > 0)
-            console.log(fpsTally[t][0]+" - "+((fpsTally[t][1]/frameCounter)*100).toFixed(2)+"%");
-    console.log("\n");
+            console.log("   "+fpsTally[t][0]+" - "+((fpsTally[t][1]/frameCounter)*100).toFixed(2)+"%");
+    console.log("");
+    
+    console.log("OUTPUT LENGTH: "+totalDuration.toFixed(2)+" seconds, "+frameCounter+" frames\n");
 
 
     fs.writeFile('temp/seq.txt', out, function (err) {
@@ -246,7 +263,7 @@ function sequence() {
     });
 
     if (encoding) encode();
-    else exec("afplay /System/Library/PrivateFrameworks/ScreenReader.framework/Versions/A/Resources/Sounds/DrillOut.aiff");
+    else exec(chime);
 }
 
 function encode(a) {
@@ -261,13 +278,17 @@ function encode(a) {
     let cTime = cHour + '' + cMinute + '' + cSecond;
     let dateTime = cDate + '' + cTime;
 
-    const previewRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/invocation_"+dateTime+".mp4 -y;",
-          finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/invocation_"+dateTime+".mov -y;"; // -vf subtitles=input/text.ass,
+    var outputFileName = "t"+track+"_"+dateTime;
+
+    const previewRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
+          finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;"; // -vf subtitles=input/text.ass,
 
 
     if (isFinalRender == true) renderType = finalRender;
     else renderType = previewRender;
 
+
+    if (isFinalRender) console.log('|| FULL RESOLUTION ||');
     console.log('ENCODING...');
 
     exec(renderType, (error, stdout, stderr) => {
@@ -282,33 +303,34 @@ function encode(a) {
         // console.log(`stdout: ${stdout}`);
 
         exec("cp sequitur.js temp/log/sequitur_"+dateTime+".js; cp temp/seq.txt temp/log/seq_"+dateTime+".txt;");
-        // exec("cp exports/invocation_"+dateTime+".mp4 exports/latest.mp4");
+        // exec("cp exports/"+outputFileName+".mp4 exports/latest.mp4");
 
-        if (fs.existsSync('exports/active0.mp4') && !fs.existsSync('exports/active1.mp4')) exec("cp exports/invocation_"+dateTime+".mp4 exports/active1.mp4");
-        else if (fs.existsSync('exports/active1.mp4') && !fs.existsSync('exports/active0.mp4')) exec("cp exports/invocation_"+dateTime+".mp4 exports/active0.mp4");
-        else exec("cp exports/invocation_"+dateTime+".mp4 exports/active0.mp4;cp exports/invocation_"+dateTime+".mp4 exports/active1.mp4");
+        if (fs.existsSync('exports/preview0.mp4') && !fs.existsSync('exports/preview1.mp4')) exec("cp exports/"+outputFileName+".mp4 exports/preview1.mp4");
+        else if (fs.existsSync('exports/preview1.mp4') && !fs.existsSync('exports/preview0.mp4')) exec("cp exports/"+outputFileName+".mp4 exports/preview0.mp4");
+        else exec("cp exports/"+outputFileName+".mp4 exports/preview0.mp4;cp exports/"+outputFileName+".mp4 exports/preview1.mp4");
 
         console.log("DONE");
-        exec("afplay /System/Library/PrivateFrameworks/ScreenReader.framework/Versions/A/Resources/Sounds/DrillOut.aiff");
+        exec(chime);
     });
 }
 
 // INITIALIZING
 console.clear();
-exec('mkdir temp temp/frames temp/log exports');
+exec('mkdir temp temp/log exports');
 
-if (fs.existsSync('input/video.mov') && fs.existsSync('input/music.mp3')) {
-    console.log('INPUT LOADED\n');
+if (fs.existsSync('input/video' + track + '.mov') && fs.existsSync('input/music.mp3')) {
+    console.log('LOADING VIDEO TRACK ' + track + '\n---\n');
 } else {
-    console.log('Place "video.mov" and "music.mp3" in "./input". \nEXITING...');
+    console.log('Place "video'+track+'.mov" and "music.mp3" in "/input". \nEXITING...');
     process.exit();
 }
 
-if(fs.existsSync('./temp/frames') && isFinalRender == false) {
+if(fs.existsSync('./temp/frames'+track) && isFinalRender == false) {
     console.log('DECODED FRAMES LOADED\n');
     checkWave();
 } else {
     console.log('DECODING...');
+    exec('mkdir temp/frames'+track)
     exec(framesType, (error, stdout, stderr) => {
         // if (error) {
         //     console.log(`error: ${error.message}`);
@@ -416,7 +438,7 @@ function analyzeAudio() {
 
 }
 
-function analyzeFrames() {
+function compareFrames() {
     const compareImages = require("resemblejs/compareImages");
 
     var timecode = [], diffedFrames = [], minutes = 1000 * 60, hours = minutes * 60, timeLeft = "";
@@ -430,8 +452,8 @@ function analyzeFrames() {
         // The parameters can be Node Buffers
         // data is the same as usual with an additional getBuffer() function
         const diffData = await compareImages(
-            await fs.readFile("temp/frames/" + a + ".jpg"),
-            await fs.readFile("temp/frames/" + b + ".jpg"),
+            await fs.readFile("temp/frames"+track+"/" + a + ".jpg"),
+            await fs.readFile("temp/frames"+track+"/" + b + ".jpg"),
             options
         );
         diffStr = '"' + b + '"' + ':' + '"' + diffData.misMatchPercentage + '"';
@@ -445,7 +467,7 @@ function analyzeFrames() {
     function init(n) {
         // fs.writeFile('outputList.txt', '');
 
-        fs.writeFile('temp/diffs.txt', '', function (err) {
+        fs.writeFile('temp/diffs'+track+'.txt', '', function (err) {
           if (err) throw err;
           // console.log('INITIATED!');
         });
@@ -503,7 +525,7 @@ function analyzeFrames() {
         var m = milsecsLeft / minutes;
         var h = milsecsLeft / hours;
 
-        if (h >= 1) timeLeft = Math.round(h) + " hours left";
+        if (h >= 1) timeLeft = h.toFixed(1) + " hours left";
         else if (m >=1 && h < 1) timeLeft = Math.round(m) + " minutes left";
         else if (m < 1 && h < 1) timeLeft = Math.round(s) + " seconds left";
 
@@ -513,12 +535,12 @@ function analyzeFrames() {
         }
 
         // console.log(a);
-        fs.appendFile('temp/diffs.txt', a, function (err) {
+        fs.appendFile('temp/diffs'+track+'.txt', a, function (err) {
           if (err) throw err;
         });
     }
 
-    const dir = 'temp/frames/';
+    const dir = 'temp/frames'+track+'/';
     fs.readdir(dir, (err, files) => {
           init(files.length);
           // console.log(files.length);
@@ -532,15 +554,21 @@ function checkWave() {
         console.log('AUDIO LEVELS LOADED\n');
         openWave();
     } 
-    else analyzeAudio();
+    else {
+        console.log('STARTING AUDIO ANALYSIS...\n');
+        analyzeAudio();
+    }
 }
 
 function checkDiffs() {
-    if (fs.existsSync('temp/diffs.txt')) {
+    if (fs.existsSync('temp/diffs'+track+'.txt')) {
         console.log('FRAME COMPARISONS LOADED\n');
         openDiffs();
     } 
-    else analyzeFrames();
+    else {
+        console.log('STARTING FRAME COMPARISON...\n');
+        compareFrames();
+    }
 }
 
 
@@ -553,6 +581,11 @@ function openWave() {
 
             // var levelsReg = /(?<=\ ).*/g, levelsArray = text.match(levelsReg);
             levelsArray = text.split('\n');
+
+            offsetLengthRatio = (frameOffset*(programFrameRate/exportFPS))/levelsArray.length; // offset at end of video (240fps)/levelsArray.length 0.001374085826124 0.000192924494176
+
+            // console.log(levelsArray.length);
+            // console.log(offsetLengthRatio);
 
             var offset = Math.round(offsetLengthRatio*levelsArray.length);
             
@@ -578,7 +611,7 @@ function openWave() {
 }
 
 function openDiffs() {
-    fs.readFile('temp/diffs.txt',
+    fs.readFile('temp/diffs'+track+'.txt',
         function(err, data) {
             if (err) throw err;
 

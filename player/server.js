@@ -5,7 +5,7 @@ var http = require('http'),
     index = fs.readFileSync(__dirname + '/index.html');
 const express = require('express')
 
-exec('cp exports/active0.mp4 exports/active1.mp4;cp exports/active1.mp4 exports/active0.mp4;');
+exec('cp exports/preview0.mp4 exports/preview1.mp4;cp exports/preview1.mp4 exports/preview0.mp4;');
 
 var sel = 1, zeroExist = false, oneExists = false;
 
@@ -14,8 +14,8 @@ var app = http.createServer(function(req, res) {
       res.writeHead(200, {'Content-Type': 'text/html'});
       res.end(index);
     }
-    if (req.url == '/video0' && fs.existsSync('exports/active0.mp4')) {
-      const path = 'exports/active0.mp4'
+    if (req.url == '/video0' && fs.existsSync('exports/preview0.mp4')) {
+      const path = 'exports/preview0.mp4'
       const stat = fs.statSync(path)
       const fileSize = stat.size
       const range = req.headers.range
@@ -52,8 +52,8 @@ var app = http.createServer(function(req, res) {
         fs.createReadStream(path).pipe(res)
       }
     }
-    if (req.url == '/video1' && fs.existsSync('exports/active1.mp4')) {
-      const path = 'exports/active1.mp4'
+    if (req.url == '/video1' && fs.existsSync('exports/preview1.mp4')) {
+      const path = 'exports/preview1.mp4'
       const stat = fs.statSync(path)
       const fileSize = stat.size
       const range = req.headers.range
@@ -107,9 +107,9 @@ io.on('connection', function(socket) {
 
 function checkVideo() {
 
-  if (fs.existsSync('exports/active0.mp4')) zeroExist = true;
+  if (fs.existsSync('exports/preview0.mp4')) zeroExist = true;
   else zeroExist = false;
-  if (fs.existsSync('exports/active1.mp4')) oneExists = true;
+  if (fs.existsSync('exports/preview1.mp4')) oneExists = true;
   else oneExists = false;
 
   previousSel = sel;
@@ -118,7 +118,7 @@ function checkVideo() {
       if (previousSel == 0) sel = 1;
       if (previousSel == 1) sel = 0;
 
-      exec('rm exports/active'+previousSel+'.mp4');
+      exec('rm exports/preview'+previousSel+'.mp4');
       io.emit('switch', sel);
       console.log(sel);
   }
@@ -131,8 +131,10 @@ setInterval(function() {
 
 app.listen(3000);
 
-    // if (req.url == '/video0' && fs.existsSync('exports/active0.mp4')) {
-    //   const path = 'exports/active0.mp4'
+exec('open -a Safari http://localhost:3000');
+
+    // if (req.url == '/video0' && fs.existsSync('exports/preview0.mp4')) {
+    //   const path = 'exports/preview0.mp4'
     //   const stat = fs.statSync(path)
     //   const fileSize = stat.size
     //   const range = req.headers.range
