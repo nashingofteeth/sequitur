@@ -7,5 +7,3 @@
 
 # ffmpeg -i exports/invocation_xxxxxxxxxxxx.mov -an -filter "minterpolate='mi_mode=mci:fps=60:scd=none'" invocation_xxxxxxxxxxxx_interpolated.mov -y;
 # ffmpeg -i invocation_xxxxxxxxxxxx.mov -vcodec libx264 -crf 15 -pix_fmt yuv420p invocation_xxxxxxxxxxxx.mp4;
-
-# ssh nash@nash.video -p 2222 -R 8282:localhost:3000
