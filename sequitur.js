@@ -1,9 +1,11 @@
-track = 75;
-encoding = 0;
+track = 1;
+encoding = 1;
 isFinalRender = 0;
+noAud = 1;
+generateWave = 1;
 
 diffRangeMax = 1.0;
-diffRangeMin = 0.05;
+diffRangeMin = 0.0;
 
 variableReuseSpacing = 0;
 reuseSpacingMax = 120;
@@ -17,7 +19,7 @@ variableFrameRate = 1;
 
 exclude = [0,0];
 
-frameOffset = 7;
+frameOffset = 0;
 
 sourceFrameRate = 30;
 previewResolution = 240;
@@ -35,23 +37,59 @@ else framesType = previewFrames;
 
 var out = '', obj = [], diffs = [], unsortedDiffs = [], usedKeys = [], fpsTally = [], levels = [], frameTally = [], sortedLevels = [],
     previousDiff = 100,  frameCounter = 0, totalDuration = 0, previousK = 0, k = 0,
-    frameRate = 24, programFrameRate = 240, duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate)),
+    frameRate = 60, programFrameRate = 240, duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate)),
     frameRates = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 24, 30, 40, 48, 60], // divisors of 240
-    durationMin = frameRates.indexOf(frameRate), frameRatesWeighted = 8;
+    durationMin = frameRates.indexOf(frameRate), frameRatesWeighted = 2;
 
 const fs = require("mz/fs");
 const { exec } = require("child_process");
 
+function genWave() {
+    values = "";
+    lengthSecs = 30;
+    l = programFrameRate * lengthSecs;
+    maxValue = 10000;
+    maxRandChange = 200;
+    minChange = 20;
+    maxChange = maxRandChange;
+    value = 0;
+    direction = 1;
+    // change = minChange;
+    for (i=0;i<(l-1);i++) {
+        waveProgress = i/l;
+        change = minChange+(((maxChange-minChange)*(value/maxValue)));
+        // direction = Math.floor((Math.random() * 4) + 1);
+        if (direction == 1 && (value+change) < maxValue) value = value + change;
+        if (direction == 2 && (value-change) > 0) value = value - change;
+        else if ((value+change) >= maxValue) direction = 2;
+        else if ((value-change) <= 0) direction = 1;
+        if ((value+change) >= maxValue || (value-change) <= 0) maxChange = Math.floor((Math.random() * maxRandChange) + 1);
+
+        values = values + (value/maxValue) + "\n";
+        // console.log(value/10);
+    }
+    fs.writeFile('temp/wave.txt', values, function (err) {
+      if (err) throw err;
+    });
+
+    console.log('WAVE GENERATED\n');
+
+    setTimeout(function () {
+        openWave();
+    }, 100);
+}
+
 function sequence() {
 
 // INITALIZE MISC VARIABLES
-    // k = Math.floor((Math.random() * (obj.length-1)) + 0);
+    k = Math.floor((Math.random() * (obj.length-1)) + 0);
     // k = 300;
     firstFrame = k;
 
     sortedLevels.sort(function(a, b){return b-a});
     var levelsMax = sortedLevels[0];
     var boost = 1/levelsMax;
+    var boost = 1;
 
     for (i=0; i<frameRatesWeighted; i++) frameRates.push(frameRates[frameRates.length-1]);
     var durationMax = frameRates.length-1;
@@ -69,7 +107,7 @@ function sequence() {
         for (i=0;i<Math.round(currentLevel*100);i++) volIndicator = volIndicator+"|";
 
         console.clear();
-        console.log("SEQUENCING / " + (progress*100).toFixed(2) +"%"+" - "+(k+1)+".jpg, "+frameRate+"fps "+volIndicator);
+        console.log("SEQUENCING / " + (progress*100).toFixed(2) +"%"+" - "+(k+1)+".jpg, "+frameRate+"fps\n"+ parseFloat(currentLevel).toFixed(2) +" "+volIndicator);
 
         // console.log(l + " / " + levels.length);
 
@@ -111,7 +149,7 @@ function sequence() {
             reuseSpacing = levels.length;
         }
         if (currentLevel < useMaxThreshold) useMax = levels.length; //number of loops
-        if (currentLevel < reuseSpacingThreshold) reuseSpacing = 1; //length of loops
+        if (currentLevel < reuseSpacingThreshold) reuseSpacing = 0; //length of loops
 
         if (variableReuseSpacing) reuseSpacing = reuseSpacingMin+((reuseSpacingMax-reuseSpacingMin)*currentLevel);
 
@@ -152,6 +190,9 @@ function sequence() {
         tooFar=false;
         function findNextUnusedFrame(a,b) {
             if (currentLevel-previousLevel > changeThreshold) { // || currentLevel > 0.7
+                
+                if (b>poolSize-1) tooFar=true;
+                if (tooFar) b=b-2;
 
                 if (diffs[b] != undefined) var nextFrame = diffs[b][0]-1;
                 else {
@@ -159,10 +200,6 @@ function sequence() {
                     process.exit();
                 }
 
-                if (tooFar) b--;
-                else b++;
-
-                if (b>poolSize-2) tooFar=true;
 
             }
 
@@ -195,7 +232,7 @@ function sequence() {
             )
                 nextUnusedFrame = nextFrame;
 
-            else findNextUnusedFrame(a,b);
+            else findNextUnusedFrame(a,b+1);
         }
 
         // randomLevel = Math.floor(((poolSize-1)*diffRange)*((Math.floor(Math.random() * 10000) + 0)/10000));
@@ -257,6 +294,19 @@ function sequence() {
     
     console.log("OUTPUT LENGTH: "+totalDuration.toFixed(2)+" seconds, "+frameCounter+" frames\n");
 
+    console.log("WAVEFORM:");
+    levelsSnaps = [];
+    for (i=0;i<levels.length;i++) {
+        levelsSnaps.push(levels[i]);
+        i=i+Math.round(levels.length/50);
+    } 
+    for (s in levelsSnaps) {
+        columns = "";
+        for (i=0;i<Math.round(levelsSnaps[s]*100);i++) columns = columns+"|";
+        console.log(parseFloat(levelsSnaps[s]).toFixed(2) + " " + columns);
+    }
+
+
 
     fs.writeFile('temp/seq.txt', out, function (err) {
       if (err) throw err;
@@ -281,12 +331,15 @@ function encode(a) {
     var outputFileName = "t"+track+"_"+dateTime;
 
     const previewRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
-          finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;"; // -vf subtitles=input/text.ass,
+          finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;",
+          previewRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vsync 1 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
+          finalRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vsync 1 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;"; // -vf subtitles=input/text.ass,
 
 
-    if (isFinalRender == true) renderType = finalRender;
+    if (isFinalRender && noAud) renderType = finalRenderNoAux;
+    else if (isFinalRender) renderType = finalRender;
+    else if (noAud) renderType = previewRenderNoAux;
     else renderType = previewRender;
-
 
     if (isFinalRender) console.log('|| FULL RESOLUTION ||');
     console.log('ENCODING...');
@@ -548,9 +601,9 @@ function compareFrames() {
     });
 }
 
-
 function checkWave() {
-    if (fs.existsSync('temp/wave.txt')) {
+    if (generateWave) genWave();
+    else if (fs.existsSync('temp/wave.txt')) {
         console.log('AUDIO LEVELS LOADED\n');
         openWave();
     } 
