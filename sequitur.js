@@ -1,6 +1,6 @@
-track = 1;
+track = 62;
 encoding = 1;
-isFinalRender = 0;
+isFinalRender = 1;
 noAud = 1;
 generateWave = 1;
 
@@ -15,7 +15,7 @@ playAroundThreshold = 1.0;
 useMaxThreshold = 1.0;
 reuseSpacingThreshold = 1.0;
 
-variableFrameRate = 1;
+variableFrameRate = 0;
 
 exclude = [0,0];
 
@@ -46,24 +46,42 @@ const { exec } = require("child_process");
 
 function genWave() {
     values = "";
-    lengthSecs = 30;
+    lengthSecs = 180;
     l = programFrameRate * lengthSecs;
     maxValue = 10000;
-    maxRandChange = 200;
-    minChange = 20;
+    minValue = 0;
+    maxRandChange = 20;
+    minMinChange = 10;
+    minChange = minMinChange;
     maxChange = maxRandChange;
+    maxMaxChange = 500;
+    maxMinChange = 100;
     value = 0;
     direction = 1;
-    // change = minChange;
     for (i=0;i<(l-1);i++) {
         waveProgress = i/l;
-        change = minChange+(((maxChange-minChange)*(value/maxValue)));
+        maxIncreased = Math.ceil(maxRandChange+((maxMaxChange-maxRandChange)*Math.max(0, (waveProgress-0.5)*2)));
+        minChange = Math.ceil(minMinChange+((maxMinChange-minMinChange)*Math.max(0, (waveProgress-0.5)*2)));
+        minRandChange =  Math.ceil(maxIncreased * Math.abs(1-(waveProgress*2)));
+
+        change = maxChange+((minChange-maxChange)*(value/maxValue));
+
+        if (i < 3*programFrameRate) {
+            direction = 1;
+            change = minMinChange;
+        }
+        if (i > (lengthSecs-5)*programFrameRate) {
+            direction = 2;
+            change = minMinChange;
+        }
+
         // direction = Math.floor((Math.random() * 4) + 1);
         if (direction == 1 && (value+change) < maxValue) value = value + change;
-        if (direction == 2 && (value-change) > 0) value = value - change;
+        if (direction == 2 && (value-change) > minValue) value = value - change;
         else if ((value+change) >= maxValue) direction = 2;
-        else if ((value-change) <= 0) direction = 1;
-        if ((value+change) >= maxValue || (value-change) <= 0) maxChange = Math.floor((Math.random() * maxRandChange) + 1);
+        else if ((value-change) <= minValue) direction = 1;
+        if ((value+change) >= maxValue || (value-change) <= 0) maxChange = Math.floor(Math.random() * (maxIncreased - minRandChange + 1) + minRandChange);
+
 
         values = values + (value/maxValue) + "\n";
         // console.log(value/10);
