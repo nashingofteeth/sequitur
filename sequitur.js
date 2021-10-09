@@ -1,6 +1,6 @@
-track = 62;
-encoding = 1;
-isFinalRender = 1;
+track = 1;
+encoding = 0;
+isFinalRender = 0;
 noAud = 1;
 generateWave = 1;
 
