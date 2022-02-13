@@ -1,32 +1,32 @@
-track = 1;
-encoding = 0;
-isFinalRender = 0;
-noAud = 1;
-generateWave = 1;
+track = 4;
+encoding = 1;
+isFinalRender = 1;
+noAud = 0;
+generateWave = 0;
 
 diffRangeMax = 1.0;
-diffRangeMin = 0.0;
+diffRangeMin = 0.015;
 
-variableReuseSpacing = 0;
-reuseSpacingMax = 120;
-reuseSpacingMin = 1;
+variableReuseSpacing = 1;
+reuseSpacingMax = 400;
+reuseSpacingMin = 40;
 
-playAroundThreshold = 1.0;
-useMaxThreshold = 1.0;
-reuseSpacingThreshold = 1.0;
+playAroundThreshold = 0.0;
+useMaxThreshold = 0.1;
+reuseSpacingThreshold = 0.5;
 
-variableFrameRate = 0;
+variableFrameRate = 1;
 
 exclude = [0,0];
 
 frameOffset = 0;
 
-sourceFrameRate = 30;
+sourceFrameRate = 24;
 previewResolution = 240;
-finalResolution = 480;
-exportFPS = 60;
+finalResolution = 1080; 
+exportFPS = 24;
 
-diffPrecision = 5;
+diffPrecision = 5; //5
 
 const previewFrames = "ffmpeg -i input/video" + track + ".mov -vf scale=-1:"+previewResolution+" -qscale:v 2 temp/frames"+track+"/%d.jpg",
       finalFrames = "ffmpeg -i input/video" + track + ".mov -vf scale=-1:"+finalResolution+" -qscale:v 2 temp/frames"+track+"/%d.jpg"
@@ -37,9 +37,9 @@ else framesType = previewFrames;
 
 var out = '', obj = [], diffs = [], unsortedDiffs = [], usedKeys = [], fpsTally = [], levels = [], frameTally = [], sortedLevels = [],
     previousDiff = 100,  frameCounter = 0, totalDuration = 0, previousK = 0, k = 0,
-    frameRate = 60, programFrameRate = 240, duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate)),
-    frameRates = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 24, 30, 40, 48, 60], // divisors of 240
-    durationMin = frameRates.indexOf(frameRate), frameRatesWeighted = 2;
+    frameRate = 12, programFrameRate = 240, duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate)),
+    frameRates = [1, 2, 3, 4, 5, 6, 8, 10, 12, 24], // 15, 16, 20, 24, 30, 40, 48, 60], // divisors of 240
+    durationMin = frameRates.indexOf(frameRate), frameRatesWeighted = 12;
 
 const fs = require("mz/fs");
 const { exec } = require("child_process");
@@ -101,19 +101,21 @@ function sequence() {
 
 // INITALIZE MISC VARIABLES
     k = Math.floor((Math.random() * (obj.length-1)) + 0);
-    // k = 300;
+    k = 1;
     firstFrame = k;
 
     sortedLevels.sort(function(a, b){return b-a});
     var levelsMax = sortedLevels[0];
     var boost = 1/levelsMax;
-    var boost = 1;
+    // var boost = 1;
 
     for (i=0; i<frameRatesWeighted; i++) frameRates.push(frameRates[frameRates.length-1]);
     var durationMax = frameRates.length-1;
 
     for (i in obj) frameTally.push([i, 0, 0]);
     for (f in frameRates) fpsTally.push([frameRates[f], 0]);
+
+    videoPlayhead = Math.round((obj.length-1)*Math.random());
 
 // SEQUENCING
     for (l=0;l<levels.length;l++) {
@@ -157,10 +159,17 @@ function sequence() {
         if (currentLevel > 1) currentLevel = 1;
         if (currentLevel == 0) currentLevel = 1/(poolSize-1);
 
+        diffToLevelMargin = 20;
+        indexsInRange = [];
+        for (i in diffs)
+            if (parseFloat(diffs[i][1]) < ((currentLevel*100)*diffRangeMax) + diffToLevelMargin) indexsInRange.push(i);
+
+        diffRangeMaxRev = indexsInRange[indexsInRange.length-1]/poolSize;
+
 // PARAMETERS
         if (levels.length > obj.length) {
             useMax = Math.ceil(((levels.length/skipLevels)/obj.length)*1);
-            reuseSpacing = levels.length/Math.ceil(((levels.length/skipLevels)/obj.length))/2;
+            reuseSpacing  = levels.length/Math.ceil(((levels.length/skipLevels)/obj.length))/2;
         }
         else {
             useMax = 1;
@@ -171,21 +180,21 @@ function sequence() {
 
         if (variableReuseSpacing) reuseSpacing = reuseSpacingMin+((reuseSpacingMax-reuseSpacingMin)*currentLevel);
 
-        diffRange = diffRangeMin+(((diffRangeMax-diffRangeMin)*(previousLevel)));
+        diffRange = diffRangeMin+(((diffRangeMaxRev-diffRangeMin)*(currentLevel)));
         // diffRange = diffRangeMin+((diffRangeMax-diffRangeMin)*(((levels.length/2)-Math.abs((levels.length/2)-l))/(levels.length/2))); // the higher the distance from center, the lower the percentage
         // diffRange=0.9;
 
         var diffIndex = Math.floor((((poolSize-1)*diffRange)*currentLevel).toFixed(diffPrecision)); // .toFixed(1)
         // diffIndex = 1;
 
-        changeThresholdMax = 0.1;
-        changeThresholdMin = 0.0;
+        changeThresholdMax = 0.3;
+        changeThresholdMin = 0.01;
         changeThreshold = changeThresholdMin+(((changeThresholdMax-changeThresholdMin)*(previousLevel)));
         changeThreshold = -1;
 
-        skipMax = 1;
-        skipMin = 1;
-        skipFrames = Math.round(skipMin+(((skipMax-skipMin)*currentLevel)));
+        // skipMax = 1;
+        // skipMin = 1;
+        // skipFrames = Math.round(skipMin+(((skipMax-skipMin)*currentLevel)));
 
         maxPlayAroundRange = poolSize;
         minPlayAroundRange = reuseSpacing*2;
@@ -194,8 +203,13 @@ function sequence() {
         playAroundRange = Math.round(minPlayAroundRange+(((maxPlayAroundRange-minPlayAroundRange)*currentLevel)));
         // playAroundRange = 200;
 
-        maxAhead = Math.round((obj.length-1)*(l/levels.length)) + Math.round(playAroundRange/2);
-        maxBehind = Math.round((obj.length-1)*(l/levels.length)) - Math.round(playAroundRange/2);
+        if (l/500 % 1 === 0) videoPlayhead = Math.round((obj.length-1)*Math.random());
+        // videoPlayhead = Math.round((obj.length-1)*(l/levels.length));
+
+        // console.log(videoPlayhead);
+
+        maxAhead = videoPlayhead + Math.round(playAroundRange/2);
+        maxBehind = videoPlayhead - Math.round(playAroundRange/2);
 
         // playAroundThreshold = Math.random();
 
@@ -209,17 +223,16 @@ function sequence() {
         function findNextUnusedFrame(a,b) {
             if (currentLevel-previousLevel > changeThreshold) { // || currentLevel > 0.7
                 
-                if (b>poolSize-1) tooFar=true;
-                if (tooFar) b=b-2;
+                if (b<0) tooFar=true;
+                if (tooFar) b=b+2;
 
                 if (diffs[b] != undefined) var nextFrame = diffs[b][0]-1;
                 else {
                     console.log('\nINVALID FRAME!!! EXITING...\n');
                     process.exit();
                 }
-
-
             }
+            // else nextFrame = diffs[1][0]-1;
 
             // else {
             //     var nextChrono = a+skipFrames;
@@ -247,10 +260,14 @@ function sequence() {
                 && frameTally[nextFrame][1] < useMax
                 && (nextFrame > maxBehind && nextFrame < maxAhead)
                 && (nextFrame < exclude[0]-1 || nextFrame > exclude[1]-1)  // cannot be enabled with useMax = levels.length
-            )
+                // && (diffs[b][1] < (currentLevel*100))
+            ) {
                 nextUnusedFrame = nextFrame;
+                // console.log(diffs[b][1]);
 
-            else findNextUnusedFrame(a,b+1);
+            }
+
+            else findNextUnusedFrame(a,b-1);
         }
 
         // randomLevel = Math.floor(((poolSize-1)*diffRange)*((Math.floor(Math.random() * 10000) + 0)/10000));
@@ -316,7 +333,7 @@ function sequence() {
     levelsSnaps = [];
     for (i=0;i<levels.length;i++) {
         levelsSnaps.push(levels[i]);
-        i=i+Math.round(levels.length/50);
+        i=i+Math.round(levels.length/20);
     } 
     for (s in levelsSnaps) {
         columns = "";
@@ -380,6 +397,7 @@ function encode(a) {
         else if (fs.existsSync('exports/preview1.mp4') && !fs.existsSync('exports/preview0.mp4')) exec("cp exports/"+outputFileName+".mp4 exports/preview0.mp4");
         else exec("cp exports/"+outputFileName+".mp4 exports/preview0.mp4;cp exports/"+outputFileName+".mp4 exports/preview1.mp4");
 
+        console.log(outputFileName + " created\n");
         console.log("DONE");
         exec(chime);
     });
