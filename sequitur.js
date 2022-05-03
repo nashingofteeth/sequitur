@@ -1,21 +1,21 @@
-track = 4;
+track = 1;
 encoding = 1;
-isFinalRender = 1;
-noAud = 0;
-generateWave = 0;
+isFinalRender = 0;
+noAud = 1;
+generateWave = 1;
 
 diffRangeMax = 1.0;
-diffRangeMin = 0.015;
+diffRangeMin = 0.0;
 
-variableReuseSpacing = 1;
+variableReuseSpacing = 0;
 reuseSpacingMax = 400;
 reuseSpacingMin = 40;
 
-playAroundThreshold = 0.0;
-useMaxThreshold = 0.1;
-reuseSpacingThreshold = 0.5;
+playAroundThreshold = 1.0;
+useMaxThreshold = 0.0;
+reuseSpacingThreshold = 1.0;
 
-variableFrameRate = 1;
+variableFrameRate = 0;
 
 exclude = [0,0];
 
@@ -23,7 +23,7 @@ frameOffset = 0;
 
 sourceFrameRate = 24;
 previewResolution = 240;
-finalResolution = 1080; 
+finalResolution = 2160; 
 exportFPS = 24;
 
 diffPrecision = 5; //5
@@ -36,9 +36,9 @@ if (isFinalRender == true) framesType = finalFrames;
 else framesType = previewFrames;
 
 var out = '', obj = [], diffs = [], unsortedDiffs = [], usedKeys = [], fpsTally = [], levels = [], frameTally = [], sortedLevels = [],
-    previousDiff = 100,  frameCounter = 0, totalDuration = 0, previousK = 0, k = 0,
-    frameRate = 12, programFrameRate = 240, duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate)),
-    frameRates = [1, 2, 3, 4, 5, 6, 8, 10, 12, 24], // 15, 16, 20, 24, 30, 40, 48, 60], // divisors of 240
+    previousDiff = 100,  frameCounter = 0, totalDuration = 0, previousK = 0, k = 0, l = 0,
+    frameRate = 24, programFrameRate = 240, duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate)),
+    frameRates = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 24, 30, 40, 48, 60], // divisors of 240
     durationMin = frameRates.indexOf(frameRate), frameRatesWeighted = 12;
 
 const fs = require("mz/fs");
@@ -46,9 +46,9 @@ const { exec } = require("child_process");
 
 function genWave() {
     values = "";
-    lengthSecs = 180;
+    lengthSecs = 277/24;
     l = programFrameRate * lengthSecs;
-    maxValue = 10000;
+    maxValue = 1;
     minValue = 0;
     maxRandChange = 20;
     minMinChange = 10;
@@ -58,7 +58,7 @@ function genWave() {
     maxMinChange = 100;
     value = 0;
     direction = 1;
-    for (i=0;i<(l-1);i++) {
+    for (i=0;i<l;i++) {
         waveProgress = i/l;
         maxIncreased = Math.ceil(maxRandChange+((maxMaxChange-maxRandChange)*Math.max(0, (waveProgress-0.5)*2)));
         minChange = Math.ceil(minMinChange+((maxMinChange-minMinChange)*Math.max(0, (waveProgress-0.5)*2)));
@@ -84,7 +84,6 @@ function genWave() {
 
 
         values = values + (value/maxValue) + "\n";
-        // console.log(value/10);
     }
     fs.writeFile('temp/wave.txt', values, function (err) {
       if (err) throw err;
@@ -113,31 +112,13 @@ function sequence() {
     var durationMax = frameRates.length-1;
 
     for (i in obj) frameTally.push([i, 0, 0]);
+
     for (f in frameRates) fpsTally.push([frameRates[f], 0]);
 
     videoPlayhead = Math.round((obj.length-1)*Math.random());
 
 // SEQUENCING
     for (l=0;l<levels.length;l++) {
-
-// OUTPUT FRAME
-        frameCounter++;
-        var progress = l/levels.length;
-        volIndicator = "";
-        for (i=0;i<Math.round(currentLevel*100);i++) volIndicator = volIndicator+"|";
-
-        console.clear();
-        console.log("SEQUENCING / " + (progress*100).toFixed(2) +"%"+" - "+(k+1)+".jpg, "+frameRate+"fps\n"+ parseFloat(currentLevel).toFixed(2) +" "+volIndicator);
-
-        // console.log(l + " / " + levels.length);
-
-        out += "file 'frames"+track+"/" + (k+1) + ".jpg'\n" +
-                     "duration " + duration + "\n";
-
-         // k = Math.round((obj.length-1)*(l/levels.length));
-         //
-         // out += "file 'frames/" + (k+1) + ".jpg'\n" +
-         //              "duration " + 0.03332 + "\n";  // d
 
 // LOAD VALUES
         var objValues = obj[k];
@@ -159,7 +140,7 @@ function sequence() {
         if (currentLevel > 1) currentLevel = 1;
         if (currentLevel == 0) currentLevel = 1/(poolSize-1);
 
-        diffToLevelMargin = 20;
+        diffToLevelMargin = 100;
         indexsInRange = [];
         for (i in diffs)
             if (parseFloat(diffs[i][1]) < ((currentLevel*100)*diffRangeMax) + diffToLevelMargin) indexsInRange.push(i);
@@ -170,6 +151,8 @@ function sequence() {
         if (levels.length > obj.length) {
             useMax = Math.ceil(((levels.length/skipLevels)/obj.length)*1);
             reuseSpacing  = levels.length/Math.ceil(((levels.length/skipLevels)/obj.length))/2;
+            // process.exit();
+
         }
         else {
             useMax = 1;
@@ -177,6 +160,8 @@ function sequence() {
         }
         if (currentLevel < useMaxThreshold) useMax = levels.length; //number of loops
         if (currentLevel < reuseSpacingThreshold) reuseSpacing = 0; //length of loops
+        useMax = 1;
+        reuseSpacing = 0;
 
         if (variableReuseSpacing) reuseSpacing = reuseSpacingMin+((reuseSpacingMax-reuseSpacingMin)*currentLevel);
 
@@ -185,7 +170,7 @@ function sequence() {
         // diffRange=0.9;
 
         var diffIndex = Math.floor((((poolSize-1)*diffRange)*currentLevel).toFixed(diffPrecision)); // .toFixed(1)
-        // diffIndex = 1;
+        diffIndex = 0;
 
         changeThresholdMax = 0.3;
         changeThresholdMin = 0.01;
@@ -206,8 +191,6 @@ function sequence() {
         if (l/500 % 1 === 0) videoPlayhead = Math.round((obj.length-1)*Math.random());
         // videoPlayhead = Math.round((obj.length-1)*(l/levels.length));
 
-        // console.log(videoPlayhead);
-
         maxAhead = videoPlayhead + Math.round(playAroundRange/2);
         maxBehind = videoPlayhead - Math.round(playAroundRange/2);
 
@@ -226,9 +209,9 @@ function sequence() {
                 if (b<0) tooFar=true;
                 if (tooFar) b=b+2;
 
-                if (diffs[b] != undefined) var nextFrame = diffs[b][0]-1;
+                if (diffs[b]) var nextFrame = diffs[b][0]-1;
                 else {
-                    console.log('\nINVALID FRAME!!! EXITING...\n');
+                    console.log('\n"'+b+'" IS NOT A VALID INDEX! EXITING...\n');
                     process.exit();
                 }
             }
@@ -256,15 +239,13 @@ function sequence() {
             // }
 
             if (
-                (frameTally[nextFrame][2] == 0 || l-frameTally[nextFrame][2] > reuseSpacing)
+                (frameTally[nextFrame][1] == 0 || l-frameTally[nextFrame][2] >= reuseSpacing)
                 && frameTally[nextFrame][1] < useMax
-                && (nextFrame > maxBehind && nextFrame < maxAhead)
-                && (nextFrame < exclude[0]-1 || nextFrame > exclude[1]-1)  // cannot be enabled with useMax = levels.length
+                // && (nextFrame > maxBehind && nextFrame < maxAhead)
+                // && (nextFrame < exclude[0]-1 || nextFrame > exclude[1]-1)  // cannot be enabled with useMax = levels.length
                 // && (diffs[b][1] < (currentLevel*100))
             ) {
                 nextUnusedFrame = nextFrame;
-                // console.log(diffs[b][1]);
-
             }
 
             else findNextUnusedFrame(a,b-1);
@@ -272,7 +253,27 @@ function sequence() {
 
         // randomLevel = Math.floor(((poolSize-1)*diffRange)*((Math.floor(Math.random() * 10000) + 0)/10000));
         findNextUnusedFrame(k,diffIndex);
-        k = nextUnusedFrame;
+
+        if (frameTally[firstFrame][1] != 0) k = nextUnusedFrame;
+
+// SET FRAME RATE
+        frameRateIndex=Math.round(durationMin+((durationMax-durationMin)*currentLevel));
+        if (variableFrameRate) frameRate = frameRates[frameRateIndex];
+        duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate));
+        l=l+(skipLevels-1);
+
+// OUTPUT FRAME
+        out += "file 'frames"+track+"/" + (k+1) + ".jpg'\n" +
+               "duration " + duration + "\n";
+
+// OUTPUT PROGRESS
+        frameCounter++;
+        var progress = l/levels.length;
+        volIndicator = "";
+        for (i=0;i<Math.round(currentLevel*100);i++) volIndicator = volIndicator+"|";
+
+        console.clear();
+        console.log("SEQUENCING / " + (progress*100).toFixed(2) +"%"+" - "+(k+1)+".jpg, "+frameRate+"fps\n"+ parseFloat(currentLevel).toFixed(2) +" "+volIndicator);
 
 // LOGGING FRAME
         previousDiff = unsortedDiffs[k];
@@ -285,23 +286,16 @@ function sequence() {
 
         totalDuration = totalDuration+duration;
 
-// SET FRAME RATE
-        frameRateIndex=Math.round(durationMin+((durationMax-durationMin)*currentLevel));
-        if (variableFrameRate) frameRate = frameRates[frameRateIndex];
-        // frameRate = 30;
-        // if (currentLevel > 0.15) frameRate = 60;
-        duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate));
-        l=l+(skipLevels-1);
-
 // RESET VARIABLES
         diffs = [];
         unsortedDiffs = [];
 
 // STOP SEQUENCE EARLY
-        // if (frameCounter>440) l = levels.length;
+        // if (frameCounter>276) l = levels.length;
     }
+
 // SEND OUTPUT AND CONSOLE MESSAGES
-    console.clear();
+    // console.clear();
     console.log('A PATH HAS BEEN FOUND\n');
 
     console.log('VIDEO TRACK: ' + track + '\n');
@@ -312,9 +306,9 @@ function sequence() {
             numberOfFramesUsed++;
 
     console.log("SOURCE VIDEO LENGTH: " + obj.length + " frames");
-    console.log("SOURCE AUDIO LENGTH ("+programFrameRate+" Hz): " + levels.length + " samples\n");
+    console.log("SOURCE AUDIO LENGTH ("+programFrameRate+" Hz): " + parseInt(levels.length-1) + " samples\n");
 
-    console.log("PROGRAM TIMELINE LENGTH ("+frameRates[durationMax]+"fps): " + Math.round(levels.length/(programFrameRate/frameRates[durationMax])) + " frames\n");
+    console.log("PROGRAM TIMELINE LENGTH ("+frameRates[durationMax]+"fps): " + Math.round(parseInt(levels.length+1)/(programFrameRate/frameRates[durationMax])) + " frames\n");
 
     console.log("VIDEO FRAMES USED: " + ((numberOfFramesUsed/obj.length)*100).toFixed(2) + "%\n");
 
@@ -341,7 +335,7 @@ function sequence() {
         console.log(parseFloat(levelsSnaps[s]).toFixed(2) + " " + columns);
     }
 
-
+    // for (i in frameTally) console.log(frameTally[i]);
 
     fs.writeFile('temp/seq.txt', out, function (err) {
       if (err) throw err;
@@ -365,10 +359,10 @@ function encode(a) {
 
     var outputFileName = "t"+track+"_"+dateTime;
 
-    const previewRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
-          finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;",
-          previewRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vsync 1 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
-          finalRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vsync 1 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;"; // -vf subtitles=input/text.ass,
+    const previewRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 0 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
+          finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 0 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;",
+          previewRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vsync 0 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
+          finalRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vsync 0 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;"; // -vf subtitles=input/text.ass,
 
 
     if (isFinalRender && noAud) renderType = finalRenderNoAux;
