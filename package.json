@@ -1,4 +1,11 @@
 {
+  "name": "sequitur",
+  "version": "3.0.0",
+  "description": "frame diffing video editor",
+  "private": true,
+  "scripts": {
+    "start": "node scripts/sequitur.js"
+  },
   "dependencies": {
     "express": "^4.17.1",
     "fs": "^0.0.1-security",
