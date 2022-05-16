@@ -1,23 +1,24 @@
 track = 2;
-encoding = 0;
-isFinalRender = 0;
+encoding = 1; //after sequencing
+sequencing = 1;
+isFinalRender = 1;
 noAud = 0;
 generateWave = 0;
 
-diffRangeMax = 0.4;
+diffRangeMax = 1.0;
 diffRangeMin = 0.0;
 
-diffToLevelMargin = 20;
+diffToLevelMargin = 60;
+
+playAroundThreshold = 1.0;
+useMaxThreshold = 1.0;
+reuseSpacingThreshold = 0.2;
+
+variableFrameRate = 0;
 
 variableReuseSpacing = 0;
 reuseSpacingMax = 400;
 reuseSpacingMin = 40;
-
-playAroundThreshold = 1.0;
-useMaxThreshold = 1.0;
-reuseSpacingThreshold = 0.3;
-
-variableFrameRate = 1;
 
 exclude = [0,0];
 
@@ -41,7 +42,7 @@ var out = '', obj = [], diffs = [], unsortedDiffs = [], usedKeys = [], fpsTally 
     previousDiff = 100,  frameCounter = 0, totalDuration = 0, previousK = 0, k = 0, l = 0,
     frameRate = 60, programFrameRate = 240, duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate)),
     frameRates = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 24, 30, 40, 48, 60], // divisors of 240
-    durationMin = frameRates.indexOf(frameRate), frameRatesWeighted = 5;
+    durationMin = frameRates.indexOf(frameRate), frameRatesWeighted = 6;
 
 const fs = require("mz/fs");
 const { exec } = require("child_process");
@@ -50,7 +51,7 @@ function sequence() {
 
 // INITALIZE MISC VARIABLES
     k = Math.floor((Math.random() * (obj.length-1)) + 0);
-    k = 0;
+    k = 1598;
     firstFrame = k;
 
     sortedLevels.sort(function(a, b){return b-a});
@@ -90,11 +91,12 @@ function sequence() {
         if (currentLevel > 1) currentLevel = 1;
         if (currentLevel == 0) currentLevel = 1/(poolSize-1);
 
+        diffToLevelMargin = (currentLevel*100);
         indexsInRange = [];
         for (i in diffs)
             if (parseFloat(diffs[i][1]) < ((currentLevel*100)*diffRangeMax) + diffToLevelMargin) indexsInRange.push(i);
 
-        // diffRangeMax = indexsInRange[indexsInRange.length-1]/poolSize;
+        diffRangeMax = indexsInRange[indexsInRange.length-1]/poolSize;
 
 // PARAMETERS
         if (levels.length > obj.length) {
@@ -110,8 +112,8 @@ function sequence() {
 
         if (variableReuseSpacing) reuseSpacing = reuseSpacingMin+((reuseSpacingMax-reuseSpacingMin)*currentLevel);
 
-        diffRange = diffRangeMin+(((diffRangeMax-diffRangeMin)*(currentLevel)));
-        // diffRange = diffRangeMin+((diffRangeMax-diffRangeMin)*(((levels.length/2)-Math.abs((levels.length/2)-l))/(levels.length/2))); // the higher the distance from center, the lower the percentage
+        // diffRange = diffRangeMin+(((diffRangeMax-diffRangeMin)*(currentLevel)));
+        diffRange = diffRangeMin+((diffRangeMax-diffRangeMin)*(((levels.length/2)-Math.abs((levels.length/2)-l))/(levels.length/2))); // the higher the distance from center, the lower the percentage
 
         var diffIndex = Math.floor((((poolSize-1)*diffRange)*currentLevel).toFixed(diffPrecision)); // .toFixed(1)
 
@@ -144,6 +146,7 @@ function sequence() {
             if (diffs[b]) var nextFrame = diffs[b][0]-1;
             else {
                 console.log('\n"'+b+'" IS NOT A VALID INDEX! EXITING...\n');
+                exec(chime);
                 process.exit();
             }
 
@@ -220,15 +223,17 @@ function sequence() {
     console.log("VIDEO FRAMES USED: " + ((numberOfFramesUsed/obj.length)*100).toFixed(2) + "%\n");
 
     console.log("FIRST FRAME: " + (firstFrame+1) + ".jpg");
-    console.log("LAST FRAME: " + (k+1) + ".jpg\n");
+    console.log("LAST FRAME: " + (k+1) + ".jpg");
 
-    console.log("FPS DISTRIBUTION:");
+    if (variableFrameRate) {
+    console.log("\nFPS DISTRIBUTION:");
     for (t in fpsTally)
         if (fpsTally[t][1] > 0)
             console.log("   "+fpsTally[t][0]+" - "+((fpsTally[t][1]/frameCounter)*100).toFixed(2)+"%");
-    console.log("");
+    }
+    else console.log("\nFRAME RATE: " + frameRate + "fps");
     
-    console.log("OUTPUT LENGTH: "+totalDuration.toFixed(2)+" seconds, "+frameCounter+" frames\n");
+    console.log("\nOUTPUT LENGTH: "+totalDuration.toFixed(2)+" seconds, "+frameCounter+" frames\n");
 
     console.log("WAVEFORM:");
     levelsSnaps = [];
@@ -320,10 +325,10 @@ function encode(a) {
 
     var outputFileName = "t"+track+"_"+dateTime;
 
-    const previewRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
-          finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;",
-          previewRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vsync 1 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
-          finalRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vsync 1 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;"; // -vf subtitles=input/text.ass,
+    const previewRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync vfr -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
+          finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync vfr -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;",
+          previewRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vsync vfr -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
+          finalRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vsync vfr -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;"; // -vf subtitles=input/text.ass,
 
 
     if (isFinalRender && noAud) renderType = finalRenderNoAux;
@@ -331,19 +336,11 @@ function encode(a) {
     else if (noAud) renderType = previewRenderNoAux;
     else renderType = previewRender;
 
-    if (isFinalRender) console.log('|| FULL RESOLUTION ||');
+    if (isFinalRender) console.log('\n|| FULL RESOLUTION ||');
     console.log('\nENCODING...');
 
     exec(renderType, (error, stdout, stderr) => {
-        // if (error) {
-        //     console.log(`error: ${error.message}`);
-        //     return;
-        // }
-        // if (stderr) {
-        //     console.log(`stderr: ${stderr}`);
-        //     return;
-        // }
-        // console.log(`stdout: ${stdout}`);
+        if (!sequencing) console.log(error, stdout, stderr);
 
         exec("cp sequitur.js temp/log/sequitur_"+dateTime+".js; cp temp/seq.txt temp/log/seq_"+dateTime+".txt;");
         // exec("cp exports/"+outputFileName+".mp4 exports/latest.mp4");
@@ -358,37 +355,32 @@ function encode(a) {
     });
 }
 
-// INITIALIZING
+// INITIALIZING ------------------------- PROGRAM START
 console.clear();
 exec('mkdir temp temp/log exports');
 
-if (fs.existsSync('input/video' + track + '.mov') && fs.existsSync('input/music.mp3')) {
-    console.log('LOADING VIDEO TRACK ' + track + '\n---\n');
-} else {
-    console.log('Place "video'+track+'.mov" and "music.mp3" in "/input". \nEXITING...');
-    process.exit();
-}
+if (sequencing) {
+    if (fs.existsSync('input/video' + track + '.mov') && fs.existsSync('input/music.mp3')) {
+        console.log('LOADING VIDEO TRACK ' + track + '\n---\n');
+    } else {
+        console.log('Place "video'+track+'.mov" and "music.mp3" in "/input". \nEXITING...');
+        process.exit();
+    }
 
-if(fs.existsSync('./temp/frames'+track) && isFinalRender == false) {
-    console.log('DECODED FRAMES LOADED\n');
-    checkWave();
-} else {
-    console.log('DECODING...');
-    exec('mkdir temp/frames'+track)
-    exec(framesType, (error, stdout, stderr) => {
-        // if (error) {
-        //     console.log(`error: ${error.message}`);
-        //     return;
-        // }
-        // if (stderr) {
-        //     console.log(`stderr: ${stderr}`);
-        //     return;
-        // }
-        // console.log(`stdout: ${stdout}`);
-        console.log('DONE\n');
+    if(fs.existsSync('./temp/frames'+track) && isFinalRender == false) {
+        console.log('DECODED FRAMES LOADED\n');
         checkWave();
-    }); 
+    } else {
+        console.log('DECODING...');
+        exec('mkdir temp/frames'+track)
+        exec(framesType, (error, stdout, stderr) => {
+            // console.log(error, stdout, stderr);
+            console.log('DONE\n');
+            checkWave();
+        }); 
+    }
 }
+else encode();
 
 function analyzeAudio() {
     fs.writeFile('temp/wave.txt', '');
@@ -586,7 +578,7 @@ function compareFrames() {
 
     const dir = 'temp/frames'+track+'/';
     fs.readdir(dir, (err, files) => {
-          init(files.length-1);
+          init(files.length);
           // console.log(files.length);
           // init(100);
     });
