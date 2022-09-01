@@ -1,7 +1,7 @@
-track = 2;
-encoding = 1; //after sequencing
+track = 1;
+encoding = 0; //after sequencing
 sequencing = 1;
-isFinalRender = 1;
+isFinalRender = 0;
 noAud = 0;
 generateWave = 0;
 
@@ -12,7 +12,7 @@ diffToLevelMargin = 60;
 
 playAroundThreshold = 1.0;
 useMaxThreshold = 1.0;
-reuseSpacingThreshold = 0.2;
+reuseSpacingThreshold = 1.0;
 
 variableFrameRate = 0;
 
@@ -51,7 +51,7 @@ function sequence() {
 
 // INITALIZE MISC VARIABLES
     k = Math.floor((Math.random() * (obj.length-1)) + 0);
-    k = 1598;
+    k = 0;
     firstFrame = k;
 
     sortedLevels.sort(function(a, b){return b-a});
@@ -369,14 +369,14 @@ if (sequencing) {
 
     if(fs.existsSync('./temp/frames'+track) && isFinalRender == false) {
         console.log('DECODED FRAMES LOADED\n');
-        checkWave();
+        checkDiffs();
     } else {
         console.log('DECODING...');
         exec('mkdir temp/frames'+track)
         exec(framesType, (error, stdout, stderr) => {
             // console.log(error, stdout, stderr);
             console.log('DONE\n');
-            checkWave();
+            checkDiffs();
         }); 
     }
 }
@@ -640,8 +640,8 @@ function openWave() {
             }
 
             setTimeout(function () {
-                checkDiffs();
-            }, 100);
+                sequence();
+            }, 1000);
         }
     );
 }
@@ -657,8 +657,8 @@ function openDiffs() {
             for (i in json) obj.push(json[i]);
 
             setTimeout(function () {
-                sequence();
-            }, 1000);
+                checkWave();
+            }, 100);
         }
     );
 }
