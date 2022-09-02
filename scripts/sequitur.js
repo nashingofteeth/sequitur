@@ -17,15 +17,15 @@ reuseSpacingThreshold = 1.0;
 variableFrameRate = 0;
 
 variableReuseSpacing = 0;
-reuseSpacingMax = 400;
-reuseSpacingMin = 40;
+reuseSpacingMax = 120;
+reuseSpacingMin = 1;
 
 exclude = [0,0];
 
 frameOffset = 0;
 
 sourceFrameRate = 60;
-previewResolution = 240;
+previewResolution = 480;
 finalResolution = 2160; 
 exportFPS = 60;
 
@@ -325,10 +325,10 @@ function encode(a) {
 
     var outputFileName = "t"+track+"_"+dateTime;
 
-    const previewRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync vfr -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
-          finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync vfr -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;",
-          previewRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vsync vfr -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
-          finalRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vsync vfr -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;"; // -vf subtitles=input/text.ass,
+    const previewRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 2 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
+          finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 2 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;",
+          previewRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vsync 2 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
+          finalRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vsync 2 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;"; // -vf subtitles=input/text.ass,
 
 
     if (isFinalRender && noAud) renderType = finalRenderNoAux;
