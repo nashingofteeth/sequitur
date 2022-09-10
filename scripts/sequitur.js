@@ -1,24 +1,22 @@
 track = 1;
-encoding = 0; //after sequencing
+encoding = 1; //after sequencing
 sequencing = 1;
 isFinalRender = 0;
 noAud = 0;
 generateWave = 0;
 
-diffRangeMax = 1.0;
-diffRangeMin = 0.0;
+diffRangeMax = 1.3;
+diffRangeMin = 0.2;
 
-diffToLevelMargin = 60;
-
-playAroundThreshold = 1.0;
+playAroundThreshold = 0.1;
 useMaxThreshold = 1.0;
 reuseSpacingThreshold = 1.0;
 
 variableFrameRate = 0;
 
-variableReuseSpacing = 0;
-reuseSpacingMax = 120;
-reuseSpacingMin = 1;
+variableReuseSpacing = 1;
+reuseSpacingMax = 960;
+reuseSpacingMin = 0;
 
 exclude = [0,0];
 
@@ -92,11 +90,13 @@ function sequence() {
         if (currentLevel == 0) currentLevel = 1/(poolSize-1);
 
         diffToLevelMargin = (currentLevel*100);
+        // diffToLevelMargin = 60;
+
         indexsInRange = [];
         for (i in diffs)
             if (parseFloat(diffs[i][1]) < ((currentLevel*100)*diffRangeMax) + diffToLevelMargin) indexsInRange.push(i);
 
-        diffRangeMax = indexsInRange[indexsInRange.length-1]/poolSize;
+        // diffRangeMax = indexsInRange[indexsInRange.length-1]/poolSize;
 
 // PARAMETERS
         if (levels.length > obj.length) {
