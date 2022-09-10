@@ -1,11 +1,12 @@
-track = 1;
+videoTrack = 1;
+audioTrack = 2;
 encoding = 1; //after sequencing
 sequencing = 1;
 isFinalRender = 0;
 noAud = 0;
 generateWave = 0;
 
-diffRangeMax = 1.3;
+diffRangeMax = 1.0;
 diffRangeMin = 0.2;
 
 playAroundThreshold = 0.1;
@@ -29,8 +30,8 @@ exportFPS = 60;
 
 diffPrecision = 5; //5
 
-const previewFrames = "ffmpeg -i input/video" + track + ".mov -vf scale=-1:"+previewResolution+" -qscale:v 2 temp/frames"+track+"/%d.jpg",
-      finalFrames = "ffmpeg -i input/video" + track + ".mov -vf scale=-1:"+finalResolution+" -qscale:v 2 temp/frames"+track+"/%d.jpg"
+const previewFrames = "ffmpeg -i input/video" + videoTrack + ".mov -vf scale=-1:"+previewResolution+" -qscale:v 2 temp/frames"+videoTrack+"/%d.jpg",
+      finalFrames = "ffmpeg -i input/video" + videoTrack + ".mov -vf scale=-1:"+finalResolution+" -qscale:v 2 temp/frames"+videoTrack+"/%d.jpg"
       chime = "afplay /System/Library/PrivateFrameworks/ScreenReader.framework/Versions/A/Resources/Sounds/DrillOut.aiff";
 
 if (isFinalRender == true) framesType = finalFrames;
@@ -173,7 +174,7 @@ function sequence() {
         l=l+(skipLevels-1);
 
 // OUTPUT FRAME
-        out += "file 'frames"+track+"/" + (k+1) + ".jpg'\n" +
+        out += "file 'frames"+videoTrack+"/" + (k+1) + ".jpg'\n" +
                "duration " + duration + "\n";
 
 // OUTPUT PROGRESS
@@ -208,7 +209,8 @@ function sequence() {
     console.clear();
     console.log('A PATH HAS BEEN FOUND\n');
 
-    console.log('VIDEO TRACK: ' + track + '\n');
+    console.log('VIDEO TRACK: ' + videoTrack + '\n');
+    console.log('AUDIO TRACK: ' + audioTrack + '\n');
 
     numberOfFramesUsed = 0;
     for (i in frameTally)
@@ -300,7 +302,7 @@ function genWave() {
 
         values = values + (value/maxValue) + "\n";
     }
-    fs.writeFile('temp/wave.txt', values, function (err) {
+    fs.writeFile('temp/wave' + audioTrack + '.txt', values, function (err) {
       if (err) throw err;
     });
 
@@ -323,10 +325,10 @@ function encode(a) {
     let cTime = cHour + '' + cMinute + '' + cSecond;
     let dateTime = cDate + '' + cTime;
 
-    var outputFileName = "t"+track+"_"+dateTime;
+    var outputFileName = "t"+videoTrack+"_"+dateTime;
 
-    const previewRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 2 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
-          finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 2 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;",
+    const previewRender = "ffmpeg -f concat -i temp/seq.txt -i input/audio" + audioTrack + ".mp3 -vsync 2 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
+          finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/audio" + audioTrack + ".mp3 -vsync 2 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;",
           previewRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vsync 2 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
           finalRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vsync 2 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;"; // -vf subtitles=input/text.ass,
 
@@ -360,19 +362,19 @@ console.clear();
 exec('mkdir temp temp/log exports');
 
 if (sequencing) {
-    if (fs.existsSync('input/video' + track + '.mov') && fs.existsSync('input/music.mp3')) {
-        console.log('LOADING VIDEO TRACK ' + track + '\n---\n');
+    if (fs.existsSync('input/video' + videoTrack + '.mov') && fs.existsSync('input/audio' + audioTrack + '.mp3')) {
+        console.log('LOADING VIDEO TRACK ' + videoTrack + '\n---\n');
     } else {
-        console.log('Place "video'+track+'.mov" and "music.mp3" in "/input". \nEXITING...');
+        console.log('Place "video'  + videoTrack + '.mov" and "audio' + audioTrack + '.mp3" in "/input". \nEXITING...');
         process.exit();
     }
 
-    if(fs.existsSync('./temp/frames'+track) && isFinalRender == false) {
+    if(fs.existsSync('./temp/frames'+videoTrack) && isFinalRender == false) {
         console.log('DECODED FRAMES LOADED\n');
         checkDiffs();
     } else {
         console.log('DECODING...');
-        exec('mkdir temp/frames'+track)
+        exec('mkdir temp/frames'+videoTrack)
         exec(framesType, (error, stdout, stderr) => {
             // console.log(error, stdout, stderr);
             console.log('DONE\n');
@@ -383,7 +385,7 @@ if (sequencing) {
 else encode();
 
 function analyzeAudio() {
-    fs.writeFile('temp/wave.txt', '');
+    fs.writeFile('temp/wave' + audioTrack + '.txt', '');
 
     // beats.js https://github.com/victordibia/beats
     var AudioContext = require('web-audio-api').AudioContext
@@ -395,7 +397,7 @@ function analyzeAudio() {
     //Note: I have no rights to these sound files and they are not created by me.
     //You may downlaod and use your own sound file to further test this.
     //
-    var soundfile = "input/music.mp3"
+    var soundfile = "input/audio" + audioTrack + ".mp3"
     decodeSoundFile(soundfile);
 
     /**
@@ -457,7 +459,7 @@ function analyzeAudio() {
         // Print out mini equalizer on commandline
         console.clear();
         console.log("ANALYZING AUDIO / " +((index/pcmdata.length)*100).toFixed(2)+"% - "+ max, bars  );
-        fs.appendFileSync('temp/wave.txt', String(max+"\n"), function (err) {
+        fs.appendFileSync('temp/wave' + audioTrack + '.txt', String(max+"\n"), function (err) {
           if (err) throw err;
         });
         prevmax = max ; max = 0 ; index += step ;
@@ -488,8 +490,8 @@ function compareFrames() {
         // The parameters can be Node Buffers
         // data is the same as usual with an additional getBuffer() function
         const diffData = await compareImages(
-            await fs.readFile("temp/frames"+track+"/" + a + ".jpg"),
-            await fs.readFile("temp/frames"+track+"/" + b + ".jpg"),
+            await fs.readFile("temp/frames"+videoTrack+"/" + a + ".jpg"),
+            await fs.readFile("temp/frames"+videoTrack+"/" + b + ".jpg"),
             options
         );
         diffStr = '"' + b + '"' + ':' + '"' + diffData.misMatchPercentage + '"';
@@ -503,7 +505,7 @@ function compareFrames() {
     function init(n) {
         // fs.writeFile('outputList.txt', '');
 
-        fs.writeFile('temp/diffs'+track+'.txt', '', function (err) {
+        fs.writeFile('temp/diffs'+videoTrack+'.txt', '', function (err) {
           if (err) throw err;
           // console.log('INITIATED!');
         });
@@ -571,12 +573,12 @@ function compareFrames() {
         }
 
         // console.log(a);
-        fs.appendFile('temp/diffs'+track+'.txt', a, function (err) {
+        fs.appendFile('temp/diffs'+videoTrack+'.txt', a, function (err) {
           if (err) throw err;
         });
     }
 
-    const dir = 'temp/frames'+track+'/';
+    const dir = 'temp/frames'+videoTrack+'/';
     fs.readdir(dir, (err, files) => {
           init(files.length);
           // console.log(files.length);
@@ -586,7 +588,7 @@ function compareFrames() {
 
 function checkWave() {
     if (generateWave) genWave();
-    else if (fs.existsSync('temp/wave.txt')) {
+    else if (fs.existsSync('temp/wave' + audioTrack + '.txt')) {
         console.log('AUDIO LEVELS LOADED\n');
         openWave();
     } 
@@ -597,7 +599,7 @@ function checkWave() {
 }
 
 function checkDiffs() {
-    if (fs.existsSync('temp/diffs'+track+'.txt')) {
+    if (fs.existsSync('temp/diffs'+videoTrack+'.txt')) {
         console.log('FRAME COMPARISONS LOADED\n');
         openDiffs();
     } 
@@ -609,7 +611,7 @@ function checkDiffs() {
 
 
 function openWave() {
-    fs.readFile('temp/wave.txt',
+    fs.readFile('temp/wave' + audioTrack + '.txt',
         function(err, data) {
             if (err) throw err;
 
@@ -647,7 +649,7 @@ function openWave() {
 }
 
 function openDiffs() {
-    fs.readFile('temp/diffs'+track+'.txt',
+    fs.readFile('temp/diffs'+videoTrack+'.txt',
         function(err, data) {
             if (err) throw err;
 
