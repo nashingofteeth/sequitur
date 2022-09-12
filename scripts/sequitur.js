@@ -6,16 +6,16 @@ isFinalRender = 0;
 noAud = 0;
 generateWave = 0;
 
-diffRangeMax = 1.0;
-diffRangeMin = 0.2;
+diffRangeMax = 0.8;
+diffRangeMin = 0.1;
 
-playAroundThreshold = 0.1;
+playAroundThreshold = 1.0;
 useMaxThreshold = 1.0;
 reuseSpacingThreshold = 1.0;
 
 variableFrameRate = 0;
 
-variableReuseSpacing = 1;
+variableReuseSpacing = 0;
 reuseSpacingMax = 960;
 reuseSpacingMin = 0;
 
@@ -209,7 +209,7 @@ function sequence() {
     console.clear();
     console.log('A PATH HAS BEEN FOUND\n');
 
-    console.log('VIDEO TRACK: ' + videoTrack + '\n');
+    console.log('VIDEO TRACK: ' + videoTrack);
     console.log('AUDIO TRACK: ' + audioTrack + '\n');
 
     numberOfFramesUsed = 0;
@@ -325,7 +325,7 @@ function encode(a) {
     let cTime = cHour + '' + cMinute + '' + cSecond;
     let dateTime = cDate + '' + cTime;
 
-    var outputFileName = "t"+videoTrack+"_"+dateTime;
+    var outputFileName = "v"+videoTrack+"a"+audioTrack+"_"+dateTime;
 
     const previewRender = "ffmpeg -f concat -i temp/seq.txt -i input/audio" + audioTrack + ".mp3 -vsync 2 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
           finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/audio" + audioTrack + ".mp3 -vsync 2 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;",
