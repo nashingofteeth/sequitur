@@ -344,7 +344,7 @@ function encode(a) {
     exec(renderType, (error, stdout, stderr) => {
         if (!sequencing) console.log(error, stdout, stderr);
 
-        exec("cp sequitur.js temp/log/sequitur_"+dateTime+".js; cp temp/seq.txt temp/log/seq_"+dateTime+".txt;");
+        exec("cp scripts/sequitur.js temp/log/sequitur_"+dateTime+".js; cp temp/seq.txt temp/log/seq_"+dateTime+".txt;");
         // exec("cp exports/"+outputFileName+".mp4 exports/latest.mp4");
 
         if (fs.existsSync('exports/preview0.mp4') && !fs.existsSync('exports/preview1.mp4')) exec("cp exports/"+outputFileName+".mp4 exports/preview1.mp4");
