@@ -1,22 +1,22 @@
 videoTrack = 1;
-audioTrack = 2;
+audioTrack = 1;
 encoding = 1; //after sequencing
 sequencing = 1;
 isFinalRender = 0;
 noAud = 0;
 generateWave = 0;
 
-diffRangeMax = 0.6;
-diffRangeMin = 0.1;
+diffRangeMax = 1.0;
+diffRangeMin = 0.0;
 
-playAroundThreshold = 0.0;
+playAroundThreshold = 1.0;
 useMaxThreshold = 1.0;
 reuseSpacingThreshold = 1.0;
 
 variableFrameRate = 0;
 
 variableReuseSpacing = 0;
-reuseSpacingMax = 960;
+reuseSpacingMax = 120;
 reuseSpacingMin = 0;
 
 exclude = [0,0];
@@ -24,8 +24,8 @@ exclude = [0,0];
 frameOffset = 0;
 
 sourceFrameRate = 60;
-previewResolution = 480;
-finalResolution = 2160; 
+previewResolution = 240;
+finalResolution = 3840; 
 exportFPS = 60;
 
 diffPrecision = 5; //5
