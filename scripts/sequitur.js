@@ -1,15 +1,15 @@
 videoTrack = 1;
-audioTrack = 2;
+audioTrack = 3;
 encoding = 1; //after sequencing
 sequencing = 1;
 isFinalRender = 0;
 noAud = 0;
 generateWave = 0;
 
-diffRangeMax = 0.6;
-diffRangeMin = 0.1;
+diffRangeMax = 1.0;
+diffRangeMin = 0.0;
 
-playAroundThreshold = 1.0;
+playAroundThreshold = 0.0;
 useMaxThreshold = 1.0;
 reuseSpacingThreshold = 1.0;
 
@@ -327,10 +327,10 @@ function encode(a) {
 
     var outputFileName = "V"+videoTrack+"A"+audioTrack+"_"+dateTime;
 
-    const previewRender = "ffmpeg -f concat -i temp/seq.txt -i input/audio" + audioTrack + ".mp3 -vsync 2 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
-          finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/audio" + audioTrack + ".mp3 -vsync 2 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;",
-          previewRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vsync 2 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
-          finalRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vsync 2 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+exportFPS+" exports/"+outputFileName+".mov -y;"; // -vf subtitles=input/text.ass,
+    const previewRender = "ffmpeg -f concat -i temp/seq.txt -i input/audio" + audioTrack + ".mp3 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -vsync vfr -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
+          finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/audio" + audioTrack + ".mp3 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -vsync vfr -r "+exportFPS+" exports/"+outputFileName+".mov -y;",
+          previewRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -vsync vfr -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
+          finalRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -vsync vfr -r "+exportFPS+" exports/"+outputFileName+".mov -y;"; // -vf subtitles=input/text.ass,
 
 
     if (isFinalRender && noAud) renderType = finalRenderNoAux;
