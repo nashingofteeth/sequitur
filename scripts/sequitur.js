@@ -1,12 +1,12 @@
 videoTrack = 1;
-audioTrack = 2;
+audioTrack = 1;
 encoding = 1; //after sequencing
 sequencing = 1;
 isFinalRender = 0;
 noAud = 0;
 generateWave = 0;
 
-diffRangeMax = 1.0;
+diffRangeMax = 0.6;
 diffRangeMin = 0.0;
 
 playAroundThreshold = 0.3;
