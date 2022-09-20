@@ -6,10 +6,10 @@ isFinalRender = 0;
 noAud = 0;
 generateWave = 0;
 
-diffRangeMax = 0.6;
+diffRangeMax = 1.0;
 diffRangeMin = 0.0;
 
-playAroundThreshold = 0.3;
+playAroundThreshold = 1.0;
 useMaxThreshold = 1.0;
 reuseSpacingThreshold = 1.0;
 
@@ -24,9 +24,9 @@ exclude = [0,0];
 frameOffset = 0;
 
 sourceFrameRate = 60;
-previewResolution = 480;
+previewResolution = 240;
 finalResolution = 3840; 
-exportFPS = 30;
+exportFPS = 60;
 
 diffPrecision = 5; //5
 
@@ -39,7 +39,7 @@ else framesType = previewFrames;
 
 var out = '', obj = [], diffs = [], unsortedDiffs = [], usedKeys = [], fpsTally = [], levels = [], frameTally = [], sortedLevels = [],
     previousDiff = 100,  frameCounter = 0, totalDuration = 0, previousK = 0, k = 0, l = 0,
-    frameRate = 30, programFrameRate = 240, duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate)),
+    frameRate = 60, programFrameRate = 240, duration = 1/frameRate, skipLevels = Math.round(duration/(1/programFrameRate)),
     frameRates = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 24, 30, 40, 48, 60], // divisors of 240
     durationMin = frameRates.indexOf(frameRate), frameRatesWeighted = 6;
 
@@ -131,7 +131,7 @@ function sequence() {
         maxAhead = videoPlayhead + Math.round(playAroundRange/2);
         maxBehind = videoPlayhead - Math.round(playAroundRange/2);
 
-        if (currentLevel > playAroundThreshold) {
+        if (currentLevel < playAroundThreshold) {
             maxAhead = poolSize;
             maxBehind = 0;
         }
