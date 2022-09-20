@@ -109,12 +109,12 @@ function sequence() {
             reuseSpacing = levels.length;
         }
         if (currentLevel < useMaxThreshold) useMax = levels.length; //number of loops
-        if (currentLevel < reuseSpacingThreshold) reuseSpacing = 0; //length of loops
+        if (currentLevel < reuseSpacingThreshold) reuseSpacing = 1; //length of loops
 
         if (variableReuseSpacing) reuseSpacing = reuseSpacingMin+((reuseSpacingMax-reuseSpacingMin)*currentLevel);
 
-        // diffRange = diffRangeMin+(((diffRangeMax-diffRangeMin)*(currentLevel)));
-        diffRange = diffRangeMin+((diffRangeMax-diffRangeMin)*(((levels.length/2)-Math.abs((levels.length/2)-l))/(levels.length/2))); // the higher the distance from center, the lower the percentage
+        diffRange = diffRangeMin+(((diffRangeMax-diffRangeMin)*(currentLevel)));
+        // diffRange = diffRangeMin+((diffRangeMax-diffRangeMin)*(((levels.length/2)-Math.abs((levels.length/2)-l))/(levels.length/2))); // the higher the distance from center, the lower the percentage
 
         var diffIndex = Math.floor((((poolSize-1)*diffRange)*currentLevel).toFixed(diffPrecision)); // .toFixed(1)
 
