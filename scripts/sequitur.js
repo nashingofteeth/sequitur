@@ -9,7 +9,7 @@ generateWave = 0;
 diffRangeMax = 1.0;
 diffRangeMin = 0.0;
 
-playAroundThreshold = 1.0;
+playAroundThreshold = 0.0;
 useMaxThreshold = 1.0;
 reuseSpacingThreshold = 1.0;
 
@@ -24,7 +24,7 @@ exclude = [0,0];
 frameOffset = 0;
 
 sourceFrameRate = 60;
-previewResolution = 240;
+previewResolution = 480;
 finalResolution = 3840; 
 exportFPS = 60;
 
