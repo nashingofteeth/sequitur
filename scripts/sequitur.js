@@ -1,5 +1,5 @@
 videoTrack = 1;
-audioTrack = 1;
+audioTrack = 2;
 encoding = 1; //after sequencing
 sequencing = 1;
 isFinalRender = 0;
