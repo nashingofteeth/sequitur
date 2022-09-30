@@ -1,2 +1,2 @@
 # SEQUITUR
-conforms video frames to audio amplitude
+video frame sequencer using audio waveforms
