@@ -1,9 +1,9 @@
 videoTrack = 1;
-audioTrack = 3;
+audioTrack = 1;
 encoding = 1; //after sequencing
 sequencing = 1;
 isFinalRender = 0;
-noAud = 0;
+attachAudio = 1;
 generateWave = 0;
 
 diffRangeMax = 1.0;
@@ -34,8 +34,8 @@ const previewFrames = "ffmpeg -i input/video" + videoTrack + ".mov -vf scale=-1:
       finalFrames = "ffmpeg -i input/video" + videoTrack + ".mov -vf scale=-1:"+finalResolution+" -qscale:v 2 temp/frames"+videoTrack+"/%d.jpg"
       chime = "afplay /System/Library/PrivateFrameworks/ScreenReader.framework/Versions/A/Resources/Sounds/DrillOut.aiff";
 
-if (isFinalRender == true) framesType = finalFrames;
-else framesType = previewFrames;
+if (isFinalRender == true) decodeCmd = finalFrames;
+else decodeCmd = previewFrames;
 
 var out = '', obj = [], diffs = [], unsortedDiffs = [], usedKeys = [], fpsTally = [], levels = [], frameTally = [], sortedLevels = [],
     previousDiff = 100,  frameCounter = 0, totalDuration = 0, previousK = 0, k = 0, l = 0,
@@ -327,21 +327,20 @@ function encode(a) {
 
     var outputFileName = "V"+videoTrack+"A"+audioTrack+"_"+dateTime;
 
-    const previewRender = "ffmpeg -f concat -i temp/seq.txt -i input/audio" + audioTrack + ".mp3 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -vsync vfr -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
-          finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/audio" + audioTrack + ".mp3 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -vsync vfr -r "+exportFPS+" exports/"+outputFileName+".mov -y;",
-          previewRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -vsync vfr -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
-          finalRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -vsync vfr -r "+exportFPS+" exports/"+outputFileName+".mov -y;"; // -vf subtitles=input/text.ass,
+    const previewRender = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+previewResolution+" -vcodec libx264 -preset veryfast -crf 5 -vf format=yuv420p -vsync vfr -r "+exportFPS+" exports/"+outputFileName+".mp4",
+          finalRender = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -vsync vfr -r "+exportFPS+" exports/"+outputFileName+".mov";
 
+    if (isFinalRender) {
+        encodeCmd = finalRender;
+        console.log('\n|| FULL RESOLUTION ||');
+    }
+    else encodeCmd = previewRender;
 
-    if (isFinalRender && noAud) renderType = finalRenderNoAux;
-    else if (isFinalRender) renderType = finalRender;
-    else if (noAud) renderType = previewRenderNoAux;
-    else renderType = previewRender;
+    if (attachAudio) encodeCmd = encodeCmd + " -i input/audio" + audioTrack + ".mp3";
 
-    if (isFinalRender) console.log('\n|| FULL RESOLUTION ||');
     console.log('\nENCODING...');
 
-    exec(renderType, (error, stdout, stderr) => {
+    exec(encodeCmd, (error, stdout, stderr) => {
         if (!sequencing) console.log(error, stdout, stderr);
 
         exec("cp scripts/sequitur.js temp/log/sequitur_"+dateTime+".js; cp temp/seq.txt temp/log/seq_"+dateTime+".txt;");
@@ -375,7 +374,7 @@ if (sequencing) {
     } else {
         console.log('DECODING...');
         exec('mkdir temp/frames'+videoTrack)
-        exec(framesType, (error, stdout, stderr) => {
+        exec(decodeCmd, (error, stdout, stderr) => {
             // console.log(error, stdout, stderr);
             console.log('DONE\n');
             checkDiffs();
