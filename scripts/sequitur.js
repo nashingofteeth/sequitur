@@ -1,9 +1,10 @@
 videoTrack = 1;
 audioTrack = 1;
-encoding = 1; //after sequencing
+
 sequencing = 1;
+encoding = 1; //after sequencing
 isFinalRender = 0;
-noAud = 0;
+attachAudio = 1;
 generateWave = 0;
 
 diffRangeMax = 1.0;
@@ -25,7 +26,7 @@ frameOffset = 0;
 
 sourceFrameRate = 60;
 previewResolution = 240;
-finalResolution = 3840; 
+finalResolution = 3840;
 exportFPS = 60;
 
 diffPrecision = 5; //5
@@ -34,8 +35,8 @@ const previewFrames = "ffmpeg -i input/video" + videoTrack + ".mov -vf scale=-1:
       finalFrames = "ffmpeg -i input/video" + videoTrack + ".mov -vf scale=-1:"+finalResolution+" -qscale:v 2 temp/frames"+videoTrack+"/%d.jpg"
       chime = "afplay /System/Library/PrivateFrameworks/ScreenReader.framework/Versions/A/Resources/Sounds/DrillOut.aiff";
 
-if (isFinalRender == true) framesType = finalFrames;
-else framesType = previewFrames;
+if (isFinalRender == true) decodeCmd = finalFrames;
+else decodeCmd = previewFrames;
 
 var out = '', obj = [], diffs = [], unsortedDiffs = [], usedKeys = [], fpsTally = [], levels = [], frameTally = [], sortedLevels = [],
     previousDiff = 100,  frameCounter = 0, totalDuration = 0, previousK = 0, k = 0, l = 0,
@@ -327,29 +328,27 @@ function encode(a) {
 
     var outputFileName = "V"+videoTrack+"A"+audioTrack+"_"+dateTime;
 
-    const previewRender = "ffmpeg -f concat -i temp/seq.txt -i input/audio" + audioTrack + ".mp3 -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -vsync vfr -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
-          finalRender = "ffmpeg -f concat -i temp/seq.txt -i input/audio" + audioTrack + ".mp3 -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -vsync vfr -r "+exportFPS+" exports/"+outputFileName+".mov -y;",
-          previewRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+previewResolution+" -vcodec libx264 -crf 5 -vsync vfr -r "+exportFPS+" -pix_fmt yuv420p exports/"+outputFileName+".mp4 -y;",
-          finalRenderNoAux = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -vsync vfr -r "+exportFPS+" exports/"+outputFileName+".mov -y;"; // -vf subtitles=input/text.ass,
+    const previewRender = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+previewResolution+" -vcodec libx264 -preset veryfast -crf 5 -vf format=yuv420p -vsync vfr -r "+exportFPS+" exports/"+outputFileName+".mp4",
+          finalRender = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -vsync vfr -r "+exportFPS+" exports/"+outputFileName+".mov";
 
+    if (isFinalRender) {
+        encodeCmd = finalRender;
+        console.log('\n|| FULL RESOLUTION ||');
+    }
+    else encodeCmd = previewRender;
 
-    if (isFinalRender && noAud) renderType = finalRenderNoAux;
-    else if (isFinalRender) renderType = finalRender;
-    else if (noAud) renderType = previewRenderNoAux;
-    else renderType = previewRender;
+    if (attachAudio) encodeCmd = encodeCmd + " -i input/audio" + audioTrack + ".mp3";
 
-    if (isFinalRender) console.log('\n|| FULL RESOLUTION ||');
     console.log('\nENCODING...');
 
-    exec(renderType, (error, stdout, stderr) => {
+    exec(encodeCmd, (error, stdout, stderr) => {
         if (!sequencing) console.log(error, stdout, stderr);
 
         exec("cp scripts/sequitur.js temp/log/sequitur_"+dateTime+".js; cp temp/seq.txt temp/log/seq_"+dateTime+".txt;");
-        // exec("cp exports/"+outputFileName+".mp4 exports/latest.mp4");
 
-        if (fs.existsSync('exports/preview0.mp4') && !fs.existsSync('exports/preview1.mp4')) exec("cp exports/"+outputFileName+".mp4 exports/preview1.mp4");
-        else if (fs.existsSync('exports/preview1.mp4') && !fs.existsSync('exports/preview0.mp4')) exec("cp exports/"+outputFileName+".mp4 exports/preview0.mp4");
-        else exec("cp exports/"+outputFileName+".mp4 exports/preview0.mp4;cp exports/"+outputFileName+".mp4 exports/preview1.mp4");
+        // if (fs.existsSync('exports/preview0.mp4') && !fs.existsSync('exports/preview1.mp4')) exec("cp exports/"+outputFileName+".mp4 exports/preview1.mp4");
+        // else if (fs.existsSync('exports/preview1.mp4') && !fs.existsSync('exports/preview0.mp4')) exec("cp exports/"+outputFileName+".mp4 exports/preview0.mp4");
+        // else exec("cp exports/"+outputFileName+".mp4 exports/preview0.mp4; cp exports/"+outputFileName+".mp4 exports/preview1.mp4");
 
         console.log(outputFileName + " created\n");
         console.log("DONE");
@@ -363,7 +362,7 @@ exec('mkdir temp temp/log exports');
 
 if (sequencing) {
     if (fs.existsSync('input/video' + videoTrack + '.mov') && fs.existsSync('input/audio' + audioTrack + '.mp3')) {
-        console.log('LOADING VIDEO TRACK ' + videoTrack + '\n---\n');
+        console.log('LOADING VIDEO TRACK ' + videoTrack + ' & AUDIO TRACK ' + audioTrack +' \n---\n');
     } else {
         console.log('Place "video'  + videoTrack + '.mov" and "audio' + audioTrack + '.mp3" in "/input". \nEXITING...');
         process.exit();
@@ -375,7 +374,7 @@ if (sequencing) {
     } else {
         console.log('DECODING...');
         exec('mkdir temp/frames'+videoTrack)
-        exec(framesType, (error, stdout, stderr) => {
+        exec(decodeCmd, (error, stdout, stderr) => {
             // console.log(error, stdout, stderr);
             console.log('DONE\n');
             checkDiffs();
