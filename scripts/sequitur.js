@@ -1,7 +1,8 @@
 videoTrack = 1;
 audioTrack = 1;
-encoding = 1; //after sequencing
+
 sequencing = 1;
+encoding = 1; //after sequencing
 isFinalRender = 0;
 attachAudio = 1;
 generateWave = 0;
@@ -9,7 +10,7 @@ generateWave = 0;
 diffRangeMax = 1.0;
 diffRangeMin = 0.0;
 
-playAroundThreshold = 0.0;
+playAroundThreshold = 1.0;
 useMaxThreshold = 1.0;
 reuseSpacingThreshold = 1.0;
 
@@ -24,8 +25,8 @@ exclude = [0,0];
 frameOffset = 0;
 
 sourceFrameRate = 60;
-previewResolution = 480;
-finalResolution = 3840; 
+previewResolution = 240;
+finalResolution = 3840;
 exportFPS = 60;
 
 diffPrecision = 5; //5
@@ -344,11 +345,10 @@ function encode(a) {
         if (!sequencing) console.log(error, stdout, stderr);
 
         exec("cp scripts/sequitur.js temp/log/sequitur_"+dateTime+".js; cp temp/seq.txt temp/log/seq_"+dateTime+".txt;");
-        // exec("cp exports/"+outputFileName+".mp4 exports/latest.mp4");
 
-        if (fs.existsSync('exports/preview0.mp4') && !fs.existsSync('exports/preview1.mp4')) exec("cp exports/"+outputFileName+".mp4 exports/preview1.mp4");
-        else if (fs.existsSync('exports/preview1.mp4') && !fs.existsSync('exports/preview0.mp4')) exec("cp exports/"+outputFileName+".mp4 exports/preview0.mp4");
-        else exec("cp exports/"+outputFileName+".mp4 exports/preview0.mp4;cp exports/"+outputFileName+".mp4 exports/preview1.mp4");
+        // if (fs.existsSync('exports/preview0.mp4') && !fs.existsSync('exports/preview1.mp4')) exec("cp exports/"+outputFileName+".mp4 exports/preview1.mp4");
+        // else if (fs.existsSync('exports/preview1.mp4') && !fs.existsSync('exports/preview0.mp4')) exec("cp exports/"+outputFileName+".mp4 exports/preview0.mp4");
+        // else exec("cp exports/"+outputFileName+".mp4 exports/preview0.mp4; cp exports/"+outputFileName+".mp4 exports/preview1.mp4");
 
         console.log(outputFileName + " created\n");
         console.log("DONE");
@@ -362,7 +362,7 @@ exec('mkdir temp temp/log exports');
 
 if (sequencing) {
     if (fs.existsSync('input/video' + videoTrack + '.mov') && fs.existsSync('input/audio' + audioTrack + '.mp3')) {
-        console.log('LOADING VIDEO TRACK ' + videoTrack + '\n---\n');
+        console.log('LOADING VIDEO TRACK ' + videoTrack + ' & AUDIO TRACK ' + audioTrack +' \n---\n');
     } else {
         console.log('Place "video'  + videoTrack + '.mov" and "audio' + audioTrack + '.mp3" in "/input". \nEXITING...');
         process.exit();
