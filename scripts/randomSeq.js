@@ -5,7 +5,8 @@ console.clear();
 
 var outputFrameRate = 60,
     frameRates = [], // divisors of 240
-    targetDuration = 60; // seconds
+    targetDuration = 60, // seconds
+    primaryFrameInterval = 6;
 
 // get divisors of frameRate
 for (let i=0; i<outputFrameRate; i++) {
@@ -21,10 +22,10 @@ frameRates.push(outputFrameRate);
 
 const dir = 'temp/frames/';
 fs.readdir(dir, (err, files) => {
-    sequence(files.length);
+    sequence(1, files.length);
 });
 
-function sequence(numOfFrames) {
+function sequence(primaryFrame, numOfFrames) {
     var frames = [],
         selectedFrame = 0,
         frameDuration = 0,
@@ -41,8 +42,13 @@ function sequence(numOfFrames) {
         }
         totalDuration += frameDuration;
         
+        if ( Number.isInteger(i/primaryFrameInterval) ) selectedFrame = primaryFrame;
+
         frames.push([selectedFrame, frameDuration]);
     }
 
     console.log(frames);
+    console.log(totalDuration);
+    console.log(frames[0][0]);
+    console.log(frames[frames.length-1][1]);
 }
