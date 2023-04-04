@@ -47,8 +47,20 @@ function sequence(primaryFrame, numOfFrames) {
         frames.push([selectedFrame, frameDuration]);
     }
 
-    console.log(frames);
-    console.log(totalDuration);
-    console.log(frames[0][0]);
-    console.log(frames[frames.length-1][1]);
+    out = '';
+    for (f in frames) {
+        out += "file 'frames/" + (frames[f][0]) + ".jpg'\n" +
+               "duration " + frames[f][1] + "\n";
+    }
+
+    fs.writeFile('temp/seq.txt', out, function (err) {
+      if (err) throw err;
+      console.log('sequence written');
+    });
+
+    // console.log(out);
+    // console.log(frames);
+    // console.log(totalDuration);
+    // console.log(frames[0][0]);
+    // console.log(frames[frames.length-1][1]);
 }
