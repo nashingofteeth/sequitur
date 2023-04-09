@@ -18,22 +18,29 @@ for (let i=0; i<outputFrameRate; i++) {
 frameRates.push(outputFrameRate);
 frameRates.splice(0, 2); // remove longer durations
 
-// exec('mkdir temp temp/frames exports');
+
+// count frames, initiate
+fs.readdir('temp/frames/', (err, files) => {
+    if (!files || files.length < 2) {
+        extractFrames();
+    }
+    else {
+        generate(files.length);
+    }
+});
 
 // separate video into individual frames
-const previewFrames = "ffmpeg -i input/video.mov -vf scale=-1:"+previewResolution+" -qscale:v 2 temp/frames/%d.jpg -y",
-      finalFrames = "ffmpeg -i input/video.mov -vf scale=-1:"+finalResolution+" -qscale:v 2 temp/frames/%d.jpg -y";
+function extractFrames() {
+    exec('mkdir temp temp/frames exports');
 
-// exec(previewFrames, (error, stdout, stderr) => {
-//     console.log(error, stdout, stderr);
-//     console.log('frames extracted');
-// }); 
+    const previewFrames = "ffmpeg -i input/video.mov -vf scale=-1:"+previewResolution+" -qscale:v 2 temp/frames/%d.jpg -y",
+          fullFrames = "ffmpeg -i input/video.mov -vf scale=-1:"+finalResolution+" -qscale:v 2 temp/frames/%d.jpg -y";
 
-// count frames
-const dir = 'temp/frames/';
-fs.readdir(dir, (err, files) => {
-    generate(files.length)
-});
+    exec(previewFrames, (error, stdout, stderr) => {
+        // console.log(error, stdout, stderr);
+        console.log('frames extracted\nrun again');
+    });
+}
 
 // generate video for each frame 
 async function generate(numOfFrames) {
@@ -74,11 +81,7 @@ async function sequence(primaryFrame, numOfFrames) {
                "duration " + frames[f][1] + "\n";
     }
 
-    console.log((primaryFrame+1) + ' sequenced')
-    // console.log(frames);
-    // console.log(totalDuration);
-    // console.log(frames[0][0]);
-    // console.log(frames[frames.length-1][1]);
+    console.log((primaryFrame+1) + ' sequenced');
 
     await write(seq, primaryFrame);
     await encode(primaryFrame);
