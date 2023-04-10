@@ -4,18 +4,18 @@ const { exec } = require("child_process");
 console.clear();
 
 // global settings
-var outputFrameRate = 60,
+var maxFrameRate = 60,
     frameRates = [], // divisors of 240
     targetDuration = 60, // seconds
     primaryFrameInterval = 3,
-    previewResolution = 240,
-    finalResolution = 2160;
+    inputResolution = 2160,
+    outputResolution = 108;
 
 // get divisors of frame rate
-for (let i=0; i<outputFrameRate; i++) {
+for (let i=0; i<maxFrameRate; i++) {
     if ( (60 % i) == 0) frameRates.push(i);
 }
-frameRates.push(outputFrameRate);
+frameRates.push(maxFrameRate);
 frameRates.splice(0, 2); // remove longer durations
 
 
@@ -25,7 +25,7 @@ fs.readdir('temp/frames/', (err, files) => {
         extractFrames();
     }
     else {
-        generate(files.length);
+        generateVideos(files.length);
     }
 });
 
@@ -33,17 +33,17 @@ fs.readdir('temp/frames/', (err, files) => {
 function extractFrames() {
     exec('mkdir temp temp/frames exports');
 
-    const previewFrames = "ffmpeg -i input/video.mov -vf scale=-1:"+previewResolution+" -qscale:v 2 temp/frames/%d.jpg -y",
-          fullFrames = "ffmpeg -i input/video.mov -vf scale=-1:"+finalResolution+" -qscale:v 2 temp/frames/%d.jpg -y";
+    const previewFrames = "ffmpeg -i input/video.mov -vf scale=-1:"+outputResolution+" -qscale:v 2 temp/frames/%d.jpg -y",
+          fullFrames = "ffmpeg -i input/video.mov -vf scale=-1:"+inputResolution+" -qscale:v 2 temp/frames/%d.jpg -y";
 
-    exec(previewFrames, (error, stdout, stderr) => {
+    exec(fullFrames, (error, stdout, stderr) => {
         // console.log(error, stdout, stderr);
         console.log('frames extracted\nrun again');
     });
 }
 
 // generate video for each frame 
-async function generate(numOfFrames) {
+async function generateVideos(numOfFrames) {
     for (i = 0; i < numOfFrames; i++) {
         await sequence(i, numOfFrames);
     }
@@ -100,8 +100,8 @@ function write(seq, primaryFrame) {
 
 // encode sequence
 function encode(primaryFrame) {
-    const preview = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+previewResolution+" -vcodec libx264 -pix_fmt yuv420p -fps_mode vfr -r "+outputFrameRate+" exports/v_"+(primaryFrame+1)+".mp4 -y",
-          full = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+finalResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -fps_mode vfr -r "+outputFrameRate+" exports/v_"+(primaryFrame+1)+".mov -y";
+    const preview = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+outputResolution+" -vcodec libx264 -pix_fmt yuv420p -fps_mode vfr -r "+maxFrameRate+" exports/v_"+(primaryFrame+1)+".mp4 -y",
+          full = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+outputResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -fps_mode vfr -r "+maxFrameRate+" exports/v_"+(primaryFrame+1)+".mov -y";
 
     return new Promise(function(resolve, reject){
         exec(preview, (err, stdout, stderr) => {
