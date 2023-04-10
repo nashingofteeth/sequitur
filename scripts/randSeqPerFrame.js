@@ -1,4 +1,5 @@
 const fs = require("mz/fs");
+const path = require('path');
 const { exec } = require("child_process");
 
 console.clear();
@@ -21,11 +22,13 @@ frameRates.splice(0, 2); // remove longer durations
 
 // count frames, initiate
 fs.readdir('temp/frames/', (err, files) => {
-    if (!files || files.length < 2) {
+    const frames = files.filter(el => path.extname(el) === '.jpg');
+
+    if (!frames || frames.length < 2) {
         extractFrames();
     }
     else {
-        generateVideos(files.length);
+        generateVideos(frames.length);
     }
 });
 
