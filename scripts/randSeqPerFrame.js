@@ -103,7 +103,7 @@ function write(seq, primaryFrame) {
 
 // encode sequence
 function encode(primaryFrame) {
-    const preview = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+outputResolution+" -vcodec libx264 -pix_fmt yuv420p -fps_mode vfr -r "+maxFrameRate+" exports/v_"+(primaryFrame+1)+".mp4 -y",
+    const preview = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+outputResolution+" -vcodec libx264 -crf 30 -pix_fmt yuv420p -fps_mode vfr -r "+maxFrameRate+" exports/v_"+(primaryFrame+1)+".mp4 -y",
           full = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+outputResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -fps_mode vfr -r "+maxFrameRate+" exports/v_"+(primaryFrame+1)+".mov -y";
 
     return new Promise(function(resolve, reject){
