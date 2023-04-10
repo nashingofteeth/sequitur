@@ -5,14 +5,14 @@ const { exec } = require("child_process");
 console.clear();
 
 // global settings
-var maxFrameRate = 60,
-    frameRates = [], // divisors of 240
-    targetDuration = 60, // seconds
-    primaryFrameInterval = 3,
-    inputResolution = 2160,
-    outputResolution = 108;
+const maxFrameRate = 60,
+      targetDuration = 60, // seconds
+      primaryFrameInterval = 3,
+      inputResolution = 2160,
+      outputResolution = 108;
 
 // get divisors of frame rate
+var frameRates = [];
 for (let i=0; i<maxFrameRate; i++) {
     if ( (60 % i) == 0) frameRates.push(i);
 }
@@ -54,7 +54,7 @@ async function generateVideos(numOfFrames) {
 
 // create random sequence from frames
 async function sequence(primaryFrame, numOfFrames) {
-    var frames = [],
+    let frames = [],
         selectedFrame = 0,
         frameDuration = 0,
         totalDuration = 0,
