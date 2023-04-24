@@ -7,9 +7,9 @@ console.clear();
 // global settings
 const maxFrameRate = 60,
       targetDuration = 60, // seconds
-      primaryFrameInterval = 3,
+      primaryFrameInterval = 2,
       inputResolution = 2160,
-      outputResolution = 108;
+      outputResolution = 432;
 
 // get divisors of frame rate
 var frameRates = [];
@@ -17,7 +17,7 @@ for (let i=0; i<maxFrameRate; i++) {
     if ( (60 % i) == 0) frameRates.push(i);
 }
 frameRates.push(maxFrameRate);
-frameRates.splice(0, 2); // remove longer durations
+frameRates.splice(0, 1); // remove longer durations
 
 
 // count frames, initiate
@@ -107,7 +107,7 @@ function encode(primaryFrame) {
           full = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+outputResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -fps_mode vfr -r "+maxFrameRate+" exports/v_"+(primaryFrame+1)+".mov -y";
 
     return new Promise(function(resolve, reject){
-        exec(preview, (err, stdout, stderr) => {
+        exec(full, (err, stdout, stderr) => {
             // console.log(stdout, stderr);
             if (err) reject(err);
             resolve();
