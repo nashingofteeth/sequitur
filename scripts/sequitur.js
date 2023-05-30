@@ -32,7 +32,7 @@ exportFPS = 60;
 diffPrecision = 5; //5
 
 const previewFrames = "ffmpeg -i input/video" + videoTrack + ".mov -vf scale=-1:"+previewResolution+" -qscale:v 2 temp/frames"+videoTrack+"/%d.jpg",
-      finalFrames = "ffmpeg -i input/video" + videoTrack + ".mov -vf scale=-1:"+finalResolution+" -qscale:v 2 temp/frames"+videoTrack+"/%d.jpg"
+      finalFrames = "ffmpeg -i input/video" + videoTrack + ".mov -vf scale=-1:"+finalResolution+" -qscale:v 2 temp/frames"+videoTrack+"/%d.jpg",
       chime = "afplay /System/Library/PrivateFrameworks/ScreenReader.framework/Versions/A/Resources/Sounds/DrillOut.aiff";
 
 if (isFinalRender == true) decodeCmd = finalFrames;
