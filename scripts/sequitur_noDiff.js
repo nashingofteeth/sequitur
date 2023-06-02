@@ -2,28 +2,31 @@ const fs = require("mz/fs");
 const path = require('path');
 const { exec } = require("child_process");
 
-// global settings
-const maxFrameRate = 60,
-      targetDuration = 60, // seconds
-      inputResolution = 3840,
-      outputResolution = 480;
-
-// get divisors of frame rate
-var frameRates = [];
-for (let i=0; i<maxFrameRate; i++) {
-    if ( (60 % i) == 0) frameRates.push(i);
-}
-frameRates.push(maxFrameRate);
-frameRates.splice(0, 1); // remove longer durations
-
 console.clear();
 
-// count frames, initiate or create frames
+const validArgs = ['res', 'dur', 'fps', 'pre'];
+var args = {}
+for ( a in validArgs) {
+    const index = process.argv.indexOf('--' + validArgs[a]);
+    let value;
+    if (index > -1) {
+        value = parseInt(process.argv[index + 1]);
+        args[validArgs[a]] = (value || true);
+    }
+    else args[validArgs[a]] = false;
+}
+
+// count frames
 fs.readdir('temp/frames/', (err, files) => {
-    if (!files || files.length < 2) {
+    // extract frames if none
+    if ((!files || files.length < 2) && args['res']) {
         extractFrames();
     }
-    
+    // require some args
+    else if ( !args['res'] || !args['dur'] || !args['fps'] ) {
+        console.log('missing args!');
+    }
+    // initialize
     else {
         const frames = files.filter(el => path.extname(el) === '.jpg');
         sequence(frames.length)
@@ -34,11 +37,10 @@ fs.readdir('temp/frames/', (err, files) => {
 function extractFrames() {
     exec('mkdir temp temp/frames');
 
-    const previewFrames = "ffmpeg -i input/video.mov -vf scale=-1:"+outputResolution+" -qscale:v 2 temp/frames/%d.jpg -y",
-          fullFrames = "ffmpeg -i input/video.mov -vf scale=-1:"+inputResolution+" -qscale:v 2 temp/frames/%d.jpg -y";
+    const extractCmd = "ffmpeg -i input/video.mov -vf scale=-1:"+args['res']+" -qscale:v 2 temp/frames/%d.jpg -y";
 
     console.log('extracting frames...');
-    exec(fullFrames, (error, stdout, stderr) => {
+    exec(extractCmd, (error, stdout, stderr) => {
         console.clear();
         // console.log(error, stdout, stderr);
         console.log('frames extracted\nrun again');
@@ -49,18 +51,17 @@ function extractFrames() {
 async function sequence(numOfFrames) {
     let frames = [],
         selectedFrame = 0,
-        frameDuration = 0,
+        frameDuration = 1/args['fps'],
         totalDuration = 0,
-        loops = targetDuration * frameRates[frameRates.length-1];
+        loops = args['dur'] * args['fps'];
 
     for (let i = 0; i < loops; i++) {
-        frameDuration = 1/frameRates[Math.floor(Math.random()*frameRates.length)];
         selectedFrame = Math.floor(Math.random()*numOfFrames);
 
         // end sequencing if target duration is reached
-        if (totalDuration + frameDuration > targetDuration) {
+        if (totalDuration + frameDuration > args['dur']) {
             i = loops-1;
-            frameDuration = targetDuration - totalDuration;
+            frameDuration = args['dur'] - totalDuration;
         }
 
         totalDuration += frameDuration;
@@ -95,12 +96,14 @@ function write(seq) {
 function encode() {
     exec('mkdir exports');
 
-    const preview = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+outputResolution+" -vcodec libx264 -crf 30 -pix_fmt yuv420p -fps_mode vfr -r "+maxFrameRate+" exports/sequitur_" + Date.now() + ".mp4 -y",
-          full = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+outputResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -fps_mode vfr -r "+maxFrameRate+" exports/sequitur_" + Date.now() + ".mov -y";
+    const preview = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+args['res']+" -vcodec libx264 -crf 30 -pix_fmt yuv420p -fps_mode vfr -r "+args['fps']+" exports/sequitur_" + Date.now() + ".mp4 -y",
+          full = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+args['res']+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -fps_mode vfr -r "+args['fps']+" exports/sequitur_" + Date.now() + ".mov -y";
+
+    const encodeCmd = args['pre'] ? preview : full;
 
     console.log('encoding...');
     return new Promise(function(resolve, reject){
-        exec(preview, (err, stdout, stderr) => {
+        exec(encodeCmd, (err, stdout, stderr) => {
             console.clear();
             // console.log(stdout, stderr);
             if (err) reject(err);
