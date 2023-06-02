@@ -79,7 +79,9 @@ async function sequence(numOfFrames, waveform) {
 
     for (let i = 0; i < loops; i++) {
         level = waveform[i];
-        offset = Math.round(numOfFrames * level);
+        limit = 0.5;
+        offset = Math.round(numOfFrames * (level * limit));
+        if (offset < 3) offset = 1;
 
         if ( selectedFrame + offset > numOfFrames-1 ) selectedFrame = selectedFrame - offset;
         else if ( selectedFrame - offset < 0 ) selectedFrame = selectedFrame + offset;
