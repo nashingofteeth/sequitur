@@ -22,12 +22,12 @@ frameRates.splice(0, 1); // remove longer durations
 
 // count frames, initiate
 fs.readdir('temp/frames/', (err, files) => {
-    const frames = files.filter(el => path.extname(el) === '.jpg');
-
-    if (!frames || frames.length < 2) {
+    if (!files || files.length < 2) {
         extractFrames();
     }
+    
     else {
+        const frames = files.filter(el => path.extname(el) === '.jpg');
         generateVideos(frames.length);
     }
 });
