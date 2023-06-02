@@ -4,7 +4,7 @@ const { exec } = require("child_process");
 
 console.clear();
 
-const validArgs = ['res', 'dur', 'fps', 'pre'];
+const validArgs = ['res', 'fps', 'pre'];
 var args = {}
 for ( a in validArgs) {
     const index = process.argv.indexOf('--' + validArgs[a]);
@@ -30,7 +30,7 @@ async function init() {
         extractFrames();
     }
     // require some args
-    else if ( !args['res'] || !args['dur'] || !args['fps'] ) {
+    else if ( !args['res'] || !args['fps'] ) {
         console.log('missing args!');
     }
     // initialize
@@ -73,21 +73,17 @@ function extractFrames() {
 // create random sequence from frames
 async function sequence(numOfFrames, waveform) {
     let frames = [],
-        selectedFrame = 0,
+        selectedFrame = Math.floor(numOfFrames * Math.random()),
         frameDuration = 1/args['fps'],
-        totalDuration = 0,
-        loops = args['dur'] * args['fps'];
+        loops = waveform.length-1;
 
     for (let i = 0; i < loops; i++) {
-        selectedFrame = Math.floor(Math.random()*numOfFrames);
+        level = waveform[i];
+        offset = Math.round(numOfFrames * level);
 
-        // end sequencing if target duration is reached
-        if (totalDuration + frameDuration > args['dur']) {
-            i = loops-1;
-            frameDuration = args['dur'] - totalDuration;
-        }
-
-        totalDuration += frameDuration;
+        if ( selectedFrame + offset > numOfFrames-1 ) selectedFrame = selectedFrame - offset;
+        else if ( selectedFrame - offset < 0 ) selectedFrame = selectedFrame + offset;
+        else selectedFrame = ( Math.random() < 0.5 ) ? selectedFrame + offset : selectedFrame - offset;
         
         frames.push([selectedFrame, frameDuration]);
     }
@@ -122,8 +118,8 @@ function encode() {
         fs.mkdirSync(dir);
     }
 
-    const preview = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+args['res']+" -vcodec libx264 -crf 30 -pix_fmt yuv420p -fps_mode vfr -r "+args['fps']+" exports/sequitur_" + Date.now() + ".mp4 -y",
-          full = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+args['res']+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -fps_mode vfr -r "+args['fps']+" exports/sequitur_" + Date.now() + ".mov -y";
+    const preview = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+args['res']+" -vcodec libx264 -crf 30 -pix_fmt yuv420p -fps_mode vfr -r "+args['fps']+" exports/sequitur_" + Date.now() + ".mp4 -i input/audio.mp3",
+          full = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+args['res']+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -fps_mode vfr -r "+args['fps']+" exports/sequitur_" + Date.now() + ".mov -i input/audio.mp3";
 
     const encodeCmd = args['pre'] ? preview : full;
 
