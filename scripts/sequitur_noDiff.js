@@ -5,7 +5,7 @@ const { exec } = require("child_process");
 console.clear();
 
 const validArgs = ['res', 'fps', 'pre'];
-var args = {}
+let args = {}
 for ( a in validArgs) {
     const index = process.argv.indexOf('--' + validArgs[a]);
     let value;
@@ -22,20 +22,16 @@ async function init() {
     const waveform = await loadWaveform();
 
     // record waveform if none
-    if ( !waveform && args['fps'] ) {
-        analyzeAudio();
-    }
+    if ( !waveform && args['fps'] ) analyzeAudio();
     // extract frames if none
-    else if (!numOfFrames && args['res']) {
-        extractFrames();
-    }
+    else if (!numOfFrames && args['res']) extractFrames();
     // require some args
-    else if ( !args['res'] || !args['fps'] ) {
-        console.log('missing args!');
-    }
+    else if ( !args['res'] || !args['fps'] ) console.log('missing args!');
     // initialize
     else {
-        sequence(numOfFrames, waveform);
+        const seq = sequence(numOfFrames, waveform);
+        const written = await write(seq);
+        const encoded = await encode(written);
     }
 }
 
@@ -71,16 +67,15 @@ function extractFrames() {
 }
 
 // create random sequence from frames
-async function sequence(numOfFrames, waveform) {
+function sequence(numOfFrames, waveform) {
     let frames = [],
         selectedFrame = Math.floor(numOfFrames * Math.random()),
-        frameDuration = 1/args['fps'],
-        loops = waveform.length-1;
+        frameDuration = 1/args['fps'];
 
-    for (let i = 0; i < loops; i++) {
-        level = waveform[i];
-        limit = 0.5;
-        offset = Math.round(numOfFrames * (level * limit));
+    for (let i = 0; i < (waveform.length-1); i++) {
+        let level = waveform[i],
+            limit = 0.5,
+            offset = Math.round(numOfFrames * (level * limit));
         if (offset < 3) offset = 1;
 
         if ( selectedFrame + offset > numOfFrames-1 ) selectedFrame = selectedFrame - offset;
@@ -90,31 +85,31 @@ async function sequence(numOfFrames, waveform) {
         frames.push([selectedFrame, frameDuration]);
     }
 
-    seq = '';
+    let seq = '';
     for (f in frames) {
         seq += "file 'frames/" + (frames[f][0]+1) + ".jpg'\n" +
                "duration " + frames[f][1] + "\n";
     }
 
     console.log('sequenced');
-
-    await write(seq);
-    await encode();
+    return seq;
 }
 
 // write sequence to file
 function write(seq) {
     return new Promise(function(resolve, reject){
         fs.writeFile('temp/seq.txt', seq, function (err) {
-            if (err) reject(err);
-            resolve();
+            if (err) reject(false);
             console.log('written');
+            resolve(true);
         });
     })
 }
 
 // encode sequence
-function encode() {
+function encode(written) {
+    if (!written) process.exit();
+
     let dir = 'exports';
     if (!fs.existsSync(dir)){
         fs.mkdirSync(dir);
@@ -128,11 +123,11 @@ function encode() {
     console.log('encoding...');
     return new Promise(function(resolve, reject){
         exec(encodeCmd, (err, stdout, stderr) => {
-            console.clear();
             // console.log(stdout, stderr);
-            if (err) reject(err);
-            resolve();
-            console.log("encoded");
+            if (err) reject(false);
+            console.clear();
+            console.log('encoded');
+            resolve(true);
         });
     })
 }
@@ -143,8 +138,8 @@ function loadWaveform() {
         fs.readFile('temp/wave.txt', function(err, data) {
             if (err) resolve(false);
             else {
-                var text = data.toString('utf8');
-                levels = text.split('\n');
+                let text = data.toString('utf8');
+                const levels = text.split('\n');
                 resolve(levels);
             }
         });   
