@@ -74,9 +74,10 @@ function sequence(numOfFrames, waveform) {
 
     for (let i = 0; i < (waveform.length-1); i++) {
         let level = waveform[i],
-            limit = 0.5,
-            offset = Math.round(numOfFrames * (level * limit));
-        if (offset < 3) offset = 1;
+            maxOffset = 1,
+            minOffset = 0.5,
+            offset = Math.round(numOfFrames * (level * maxOffset));
+        if (offset < (level * minOffset)) offset = 1;
 
         if ( selectedFrame + offset > numOfFrames-1 ) selectedFrame = selectedFrame - offset;
         else if ( selectedFrame - offset < 0 ) selectedFrame = selectedFrame + offset;
