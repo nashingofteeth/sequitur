@@ -70,7 +70,8 @@ function extractFrames() {
 function sequence(numOfFrames, waveform) {
     let frames = [],
         selectedFrame = Math.floor(numOfFrames * Math.random()),
-        frameDuration = 1/args['fps'];
+        frameDuration = 1/args['fps'],
+        reverse = false;
 
     for (let i = 0; i < (waveform.length-1); i++) {
         let level = waveform[i],
@@ -79,9 +80,11 @@ function sequence(numOfFrames, waveform) {
             offset = Math.round(numOfFrames * (level * maxOffset));
         if (offset < (level * minOffset)) offset = 1;
 
-        if ( selectedFrame + offset > numOfFrames-1 ) selectedFrame = selectedFrame - offset;
-        else if ( selectedFrame - offset < 0 ) selectedFrame = selectedFrame + offset;
-        else selectedFrame = ( Math.random() < 0.5 ) ? selectedFrame + offset : selectedFrame - offset;
+        if ( selectedFrame + offset > numOfFrames-1 ) reverse = true;
+        else if ( selectedFrame - offset < 0 ) reverse = false;
+
+        if (reverse) selectedFrame = selectedFrame - offset;
+        else selectedFrame = selectedFrame + offset
         
         frames.push([selectedFrame, frameDuration]);
     }
