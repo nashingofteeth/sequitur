@@ -4,18 +4,17 @@ const { exec } = require("child_process");
 
 console.clear();
 
-const validArgs = ['res', 'fps', 'pre'];
+const validArgs = ['res', 'fps', 'pre', 'max', 'min'];
 let args = {}
 for ( a in validArgs) {
     const index = process.argv.indexOf('--' + validArgs[a]);
     let value;
     if (index > -1) {
-        value = parseInt(process.argv[index + 1]);
+        value = parseFloat(process.argv[index + 1]);
         args[validArgs[a]] = (value || true);
     }
     else args[validArgs[a]] = false;
 }
-
 
 async function init() {
     const numOfFrames = await countFrames();
@@ -75,10 +74,10 @@ function sequence(numOfFrames, waveform) {
 
     for (let i = 0; i < (waveform.length-1); i++) {
         let level = waveform[i],
-            maxOffset = 1,
-            minOffset = 0.5,
-            offset = Math.round(numOfFrames * (level * maxOffset));
-        if (offset < (level * minOffset)) offset = 1;
+            maxLevel = args['max'] || 1,
+            minOffset = args['min'] || 0,
+            maxOffset = Math.round(numOfFrames * (level * maxLevel));
+        offset = maxOffset < minOffset ? 1 : maxOffset;
 
         if ( selectedFrame + offset > numOfFrames-1 ) reverse = true;
         else if ( selectedFrame - offset < 0 ) reverse = false;
