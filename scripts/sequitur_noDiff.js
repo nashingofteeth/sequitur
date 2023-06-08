@@ -84,6 +84,11 @@ function sequence(numOfFrames, waveform) {
 
         if (reverse) selectedFrame = selectedFrame - offset;
         else selectedFrame = selectedFrame + offset
+
+        if ( selectedFrame > numOfFrames-1 || selectedFrame < 0 ) {
+            console.log('off the rails!');
+            process.exit();
+        }
         
         frames.push([selectedFrame, frameDuration]);
     }
