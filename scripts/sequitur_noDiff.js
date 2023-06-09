@@ -4,39 +4,51 @@ const { exec } = require("child_process");
 
 console.clear();
 
-const validArgs = ['res', 'fps', 'pre', 'max', 'min'];
+const validArgs = ['vid', 'aud', 'res', 'fps', 'pre', 'max', 'min', 'init'];
 let args = {}
 for ( a in validArgs) {
     const index = process.argv.indexOf('--' + validArgs[a]);
     let value;
     if (index > -1) {
-        value = parseFloat(process.argv[index + 1]);
+        value = process.argv[index + 1];
         args[validArgs[a]] = (value || true);
     }
     else args[validArgs[a]] = false;
 }
 
+const videoFile = ( args['vid'] && fs.existsSync(args['vid']) ) ? args['vid'] : false,
+    audioFile = ( args['aud'] && fs.existsSync(args['aud']) ) ? args['aud'] : false,
+    resolution = parseInt(args['res']),
+    framerate = args['fps'] ? parseInt(args['fps']) : 24,
+    preview = args['pre'],
+    maxLevel = parseFloat(args['max']),
+    minOffset = parseFloat(args['min']),
+    initalize = args['init'];
+
 async function init() {
     const numOfFrames = await countFrames();
     const waveform = await loadWaveform();
 
-    // record waveform if none
-    if ( !waveform && args['fps'] ) analyzeAudio();
-    // extract frames if none
-    else if (!numOfFrames && args['res']) extractFrames();
+
     // require some args
-    else if ( !args['res'] || !args['fps'] ) console.log('missing args!');
-    // initialize
+    if ( !resolution || !framerate || !videoFile || !audioFile ) console.log('missing/invalid args!');
+    // extract frames and record waveform if none
+    else if ( !waveform || !numOfFrames || initalize ) {;
+        await extractFrames(videoFile, resolution);
+        analyzeAudio(audioFile, framerate);
+    }
+    // sequence and encode
     else {
-        const seq = sequence(numOfFrames, waveform);
+        const seq = sequence(numOfFrames, waveform, framerate, maxLevel, minOffset);
         const written = await write(seq);
-        const encoded = await encode(written);
+        await encode(written, resolution, framerate, audioFile, preview);
     }
 }
 
 function countFrames() {
-    return new Promise(function(resolve, reject){
+    return new Promise(function(resolve, reject) {
         fs.readdir('temp/frames/', (err, files) => {
+            if (err) reject(err);
             if (!files || files.length < 2) {
                 resolve(false);
             }
@@ -44,38 +56,41 @@ function countFrames() {
                 const frames = files.filter(el => path.extname(el) === '.jpg');
                 resolve(frames.length);
             }
-        });    
-    })
+        });
+    });
 }
 
 // separate video into individual frames
-function extractFrames() {
+function extractFrames(file, res) {
     let dir = 'temp/frames';
     if (!fs.existsSync(dir)){
         fs.mkdirSync(dir);
     }
 
-    const extractCmd = "ffmpeg -i input/video.mov -vf scale=-1:"+args['res']+" -qscale:v 2 temp/frames/%d.jpg -y";
+    const extractCmd = "ffmpeg -i " + file.replace(' ','\\ ') + " -vf scale=-1:" + res + " -qscale:v 2 temp/frames/%d.jpg -y";
 
     console.log('extracting frames...');
-    exec(extractCmd, (error, stdout, stderr) => {
-        console.clear();
-        // console.log(error, stdout, stderr);
-        console.log('frames extracted\nrun again');
+    return new Promise(function(resolve, reject) {
+        exec(extractCmd, (err, stdout, stderr) => {
+            if (err) reject(err);
+            // console.log(error, stdout, stderr);
+            console.log('frames extracted');
+            resolve(true);
+        });
     });
 }
 
 // create random sequence from frames
-function sequence(numOfFrames, waveform) {
+function sequence(numOfFrames, waveform, fps, max, min) {
     let frames = [],
         selectedFrame = Math.floor(numOfFrames * Math.random()),
-        frameDuration = 1/args['fps'],
+        frameDuration = 1/fps,
         reverse = false;
 
     for (let i = 0; i < (waveform.length-1); i++) {
         let level = waveform[i],
-            maxLevel = args['max'] || 1,
-            minOffset = args['min'] || 0,
+            maxLevel = max || 1,
+            minOffset = min || 0,
             maxOffset = Math.round(numOfFrames * (level * maxLevel));
         offset = maxOffset < minOffset ? 1 : maxOffset;
 
@@ -107,7 +122,7 @@ function sequence(numOfFrames, waveform) {
 function write(seq) {
     return new Promise(function(resolve, reject){
         fs.writeFile('temp/seq.txt', seq, function (err) {
-            if (err) reject(false);
+            if (err) reject(err);
             console.log('written');
             resolve(true);
         });
@@ -115,7 +130,7 @@ function write(seq) {
 }
 
 // encode sequence
-function encode(written) {
+function encode(written, res, fps, aud, pre) {
     if (!written) process.exit();
 
     let dir = 'exports';
@@ -123,17 +138,16 @@ function encode(written) {
         fs.mkdirSync(dir);
     }
 
-    const preview = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+args['res']+" -vcodec libx264 -crf 30 -pix_fmt yuv420p -fps_mode vfr -r "+args['fps']+" exports/sequitur_" + Date.now() + ".mp4 -i input/audio.mp3",
-          full = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+args['res']+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -fps_mode vfr -r "+args['fps']+" exports/sequitur_" + Date.now() + ".mov -i input/audio.mp3";
+    const preview = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:" + res + " -vcodec libx264 -crf 30 -pix_fmt yuv420p -fps_mode vfr -r " + fps + " exports/sequitur_" + Date.now() + ".mp4 -i " + aud.replace(' ','\\ '),
+          full = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:" + res + " -c:v prores_ks -profile:v 2 -c:a pcm_s16le -fps_mode vfr -r " + fps + " exports/sequitur_" + Date.now() + ".mov -i " + aud.replace(' ','\\ ');
 
-    const encodeCmd = args['pre'] ? preview : full;
+    const encodeCmd = pre ? preview : full;
 
     console.log('encoding...');
     return new Promise(function(resolve, reject){
         exec(encodeCmd, (err, stdout, stderr) => {
             // console.log(stdout, stderr);
-            if (err) reject(false);
-            console.clear();
+            if (err) reject(err);
             console.log('encoded');
             resolve(true);
         });
@@ -142,19 +156,19 @@ function encode(written) {
 
 
 function loadWaveform() {
-    return new Promise(function(resolve, reject){
+    return new Promise(function(resolve, reject) {
         fs.readFile('temp/wave.txt', function(err, data) {
-            if (err) resolve(false);
+            if (err) reject(false);
             else {
                 let text = data.toString('utf8');
                 const levels = text.split('\n');
                 resolve(levels);
             }
         });   
-    })
+    });
 }
 
-function analyzeAudio() {
+function analyzeAudio(soundfile, fps) {
     let dir = 'temp';
     if (!fs.existsSync(dir)){
         fs.mkdirSync(dir);
@@ -171,7 +185,6 @@ function analyzeAudio() {
     //Note: I have no rights to these sound files and they are not created by me.
     //You may downlaod and use your own sound file to further test this.
     //
-    var soundfile = "input/audio.mp3"
     decodeSoundFile(soundfile);
 
     /**
@@ -201,7 +214,7 @@ function analyzeAudio() {
      * @return {[type]}            [description]
      */
     function findPeaks(pcmdata, samplerate){
-      var interval = (1/args['fps']) * 1000 ; index = 0 ;
+      var interval = (1/fps) * 1000 ; index = 0 ;
       // 120fps = 0.00834, 60fps = 0.01668, 24fps = 0.0417
       var step = Math.round( samplerate * (interval/1000) );
       var max = 0 ;
@@ -245,8 +258,6 @@ function analyzeAudio() {
       }
       return bars ;
     }
-
 }
 
-if (fs.existsSync('input/video.mov') && fs.existsSync('input/audio.mp3')) init();
-else console.log('place "video.mov" and "audio.mp3" in "/input"');
+init();
