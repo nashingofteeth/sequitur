@@ -5,3 +5,4 @@ input/
 exports/
 temp/
 project_files/
+*.sublime*
