@@ -29,11 +29,15 @@ async function init() {
     const numOfFrames = await countFrames();
     const waveform = await loadWaveform();
 
-
     // require some args
     if ( !resolution || !framerate || !videoFile || !audioFile ) console.log('missing/invalid args!');
     // extract frames and record waveform if none
-    else if ( !waveform || !numOfFrames || initalize ) {;
+    else if ( !waveform || !numOfFrames || initalize ) {
+        let dir = 'temp';
+        if (!fs.existsSync(dir)){
+            fs.mkdirSync(dir);
+        }
+
         await extractFrames(videoFile, resolution);
         analyzeAudio(audioFile, framerate);
     }
@@ -48,10 +52,7 @@ async function init() {
 function countFrames() {
     return new Promise(function(resolve, reject) {
         fs.readdir('temp/frames/', (err, files) => {
-            if (err) reject(err);
-            if (!files || files.length < 2) {
-                resolve(false);
-            }
+            if (!files || files.length < 2 || err) resolve(false);
             else {
                 const frames = files.filter(el => path.extname(el) === '.jpg');
                 resolve(frames.length);
@@ -62,7 +63,7 @@ function countFrames() {
 
 // separate video into individual frames
 function extractFrames(file, res) {
-    let dir = 'temp/frames';
+    let dir = 'temp/frames/';
     if (!fs.existsSync(dir)){
         fs.mkdirSync(dir);
     }
@@ -158,7 +159,7 @@ function encode(written, res, fps, aud, pre) {
 function loadWaveform() {
     return new Promise(function(resolve, reject) {
         fs.readFile('temp/wave.txt', function(err, data) {
-            if (err) reject(false);
+            if (err) resolve(false);
             else {
                 let text = data.toString('utf8');
                 const levels = text.split('\n');
@@ -169,10 +170,6 @@ function loadWaveform() {
 }
 
 function analyzeAudio(soundfile, fps) {
-    let dir = 'temp';
-    if (!fs.existsSync(dir)){
-        fs.mkdirSync(dir);
-    }
     fs.writeFile('temp/wave.txt', '');
 
     // beats.js https://github.com/victordibia/beats
