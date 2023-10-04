@@ -1,20 +1,14 @@
 {
   "name": "sequitur",
-  "version": "3.0.0",
-  "description": "frame diffing video editor",
+  "version": "4.0.0",
+  "description": "video sequencer",
   "private": true,
   "scripts": {
     "start": "node scripts/sequitur.js"
   },
   "dependencies": {
-    "express": "^4.17.1",
     "fs": "^0.0.1-security",
-    "http-server": "^14.1.0",
     "mz": "^2.7.0",
-    "progress": "^2.0.3",
-    "resemblejs": "^3.2.5",
-    "socket.io": "^4.0.0",
-    "underscore": "^1.13.3",
     "web-audio-api": "^0.2.2"
   }
 }
