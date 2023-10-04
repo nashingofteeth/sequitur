@@ -23,7 +23,7 @@ const videoFile = ( args['vid'] && fs.existsSync(args['vid']) ) ? args['vid'] : 
       preview = args['pre'],
       maxLevel = parseFloat(args['max']),
       minOffset = parseFloat(args['min']),
-      initalize = args['init'];
+      initialize = args['init'];
 
 async function init() {
     const numOfFrames = await countFrames();
@@ -32,7 +32,7 @@ async function init() {
     // require some args
     if ( !resolution || !framerate || !videoFile || !audioFile ) console.log('missing/invalid args!');
     // extract frames and record waveform if none
-    else if ( !waveform || !numOfFrames || initalize ) {
+    else if ( !waveform || !numOfFrames || initialize ) {
         let dir = 'temp';
         if (!fs.existsSync(dir)){
             fs.mkdirSync(dir);
