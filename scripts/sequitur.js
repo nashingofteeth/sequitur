@@ -1,6 +1,6 @@
-const fs = require("mz/fs");
-const path = require('path');
-const { exec } = require("child_process");
+const fs = require("mz/fs"),
+      path = require('path'),
+      { exec } = require("child_process");
 
 console.clear();
 
@@ -17,13 +17,13 @@ for ( a in validArgs) {
 }
 
 const videoFile = ( args['vid'] && fs.existsSync(args['vid']) ) ? args['vid'] : false,
-    audioFile = ( args['aud'] && fs.existsSync(args['aud']) ) ? args['aud'] : false,
-    resolution = parseInt(args['res']),
-    framerate = args['fps'] ? parseInt(args['fps']) : 24,
-    preview = args['pre'],
-    maxLevel = parseFloat(args['max']),
-    minOffset = parseFloat(args['min']),
-    initalize = args['init'];
+      audioFile = ( args['aud'] && fs.existsSync(args['aud']) ) ? args['aud'] : false,
+      resolution = parseInt(args['res']),
+      framerate = args['fps'] ? parseInt(args['fps']) : 24,
+      preview = args['pre'],
+      maxLevel = parseFloat(args['max']),
+      minOffset = parseFloat(args['min']),
+      initalize = args['init'];
 
 async function init() {
     const numOfFrames = await countFrames();
@@ -175,7 +175,6 @@ function analyzeAudio(soundfile, fps) {
     // beats.js https://github.com/victordibia/beats
     var AudioContext = require('web-audio-api').AudioContext
     context = new AudioContext;
-    var _ = require('underscore');
 
     var pcmdata = [] ;
 
