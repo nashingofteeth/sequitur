@@ -1,6 +1,7 @@
 const fs = require("mz/fs"),
       path = require('path'),
       { exec } = require("child_process"),
+      compareImages = require('resemblejs/compareImages'),
       wav = require('node-wav');
 
 console.clear();
@@ -27,29 +28,58 @@ const videoFile = ( args['vid'] && fs.existsSync(args['vid']) ) ? args['vid'] : 
       initialize = args['init'];
 
 async function init() {
-    const numOfFrames = await countFrames();
-    const waveform = await readWaveform();
+    var numOfFrames = await countFrames(),
+        waveform = await readWaveform(),
+        diffs = await read('temp/diffs.json');
 
     // require some args
     if ( !resolution || !framerate || !videoFile || !audioFile ) console.log('missing/invalid args!');
-    // extract frames and record waveform if none
-    else if ( !waveform || !numOfFrames || initialize ) {
+    else {
+        // check for required files
         let dir = 'temp';
         if (!fs.existsSync(dir)){
             fs.mkdirSync(dir);
         }
+        if (!numOfFrames || initialize) {
+            await extractFrames(videoFile, resolution);
+            numOfFrames = await countFrames();
+        }
+        if (!diffs || initialize) {
+            diffs = await compareFrames(numOfFrames);
+            await write('temp/diffs.json', diffs);
+        }
+        if (!waveform || initialize) {
+            waveform = await sampleWaveform(audioFile, framerate);
+            await write('temp/wave.txt', waveform);
+        }
 
-        await extractFrames(videoFile, resolution);
-        written = await writeWaveform(sampleWaveform(audioFile, framerate));
-
-        if (written) console.log('run again');
-    }
-    // sequence and encode
-    else {
+        console.log(JSON.parse(diffs));
+        // sequence and encode
         const seq = sequence(numOfFrames, waveform, framerate, maxLevel, minOffset);
-        const written = await write(seq);
+        const written = await write('temp/seq.txt', seq);
         await encode(written, resolution, framerate, audioFile, preview);
     }
+}
+
+function write(file, data) {
+    return new Promise(function(resolve, reject){
+        fs.writeFile(file, data, function (err) {
+            if (err) reject(error);
+            console.log(file + ' written');
+            resolve(true);
+        });
+    })
+}
+function read(file) {
+    return new Promise(function(resolve, reject) {
+        fs.readFile(file, function(err, data) {
+            if (err) resolve(false);
+            else {
+                console.log(file + ' read');
+                resolve(data);
+            }
+        });   
+    });
 }
 
 function countFrames() {
@@ -81,6 +111,93 @@ function extractFrames(file, res) {
             resolve(true);
         });
     });
+}
+
+async function readWaveform() {
+    let data = await read('temp/wave.txt'),
+        text = data.toString('utf8'),
+        levels = text.split('\n');
+    if (!data) return false;
+    return levels;
+}
+
+function sampleWaveform(file, fps) {
+    let buffer = fs.readFileSync(file),
+        result = wav.decode(buffer),
+        data = result.channelData[0],
+        step = result.sampleRate / fps,
+        resampled = [],
+        conformed = [],
+        min = 0,
+        max = 0;
+
+    for (s in data) {
+        min = data[s] > min ? data[s] : min;
+        if (Number.isInteger(s / step)) {
+            sample = min;
+            resampled.push(sample);
+
+            max = sample > max ? sample : max;
+            min = 0;
+        }
+    }
+
+    for (s in resampled) {
+        conformed.push( (resampled[s] * (1 / max)).toFixed(4) );
+    }
+
+    console.log('waveform sampled');
+    return conformed.join('\n');
+}
+
+async function getDiff(a, b, t) {
+    const options = {
+        returnEarlyThreshold: t,
+        ignore: "colors"
+    };
+
+    const data = await compareImages(
+        await fs.readFile("temp/frames/" + a + ".jpg"),
+        await fs.readFile("temp/frames/" + b + ".jpg"),
+        options
+    );
+    
+    return parseFloat(data.misMatchPercentage);
+}
+
+async function compareFrames(numOfFrames) {
+    let diffs = {},
+        timecode = [],
+        threshold = 100;
+
+    for (a = 1; a <= numOfFrames; a++) {
+        timecode.push(Date.now());
+        processingTime = timecode[timecode.length-1]-timecode[timecode.length-2];
+        diffsPerSec = (numOfFrames / (processingTime / 1000));
+        diffsLeft = (numOfFrames - a) * numOfFrames;
+        secsLeft = Math.round(diffsLeft / diffsPerSec);
+        timeLeft = secsLeft > 60 ? Math.round(secsLeft / 60) + 'm' : secsLeft + 's';
+        progress = Math.round((a/numOfFrames)*100);
+
+        message = (a < 2 || a > numOfFrames-1) ? 'comparing frames...' : 'comparing frames - ' + progress + '%, ' + timeLeft + ' left @ ' + Math.round(diffsPerSec) + '/s';
+        console.clear();
+        console.log(message);
+        
+        diffs[a] = {};
+        max = 0;
+        for (b = 1; b <= numOfFrames; b++) {
+            if ( b == a ) diff = 0;
+            else if ( b == a-1) diff = diffs[a-1][b];
+            else diff = await getDiff(a, b, threshold);
+
+            diffs[a][b] = parseFloat(diff);
+            max = diff > max ? diff : max; 
+        }
+
+        threshold = Math.ceil(max)+5;
+    }
+    console.clear();
+    return JSON.stringify(diffs);
 }
 
 function sequence(numOfFrames, waveform, fps, max, min) {
@@ -120,16 +237,6 @@ function sequence(numOfFrames, waveform, fps, max, min) {
     return seq;
 }
 
-function write(seq) {
-    return new Promise(function(resolve, reject){
-        fs.writeFile('temp/seq.txt', seq, function (err) {
-            if (err) reject(err);
-            console.log('written');
-            resolve(true);
-        });
-    })
-}
-
 function encode(written, res, fps, aud, pre) {
     if (!written) process.exit();
 
@@ -152,61 +259,6 @@ function encode(written, res, fps, aud, pre) {
             resolve(true);
         });
     })
-}
-
-
-function readWaveform() {
-    return new Promise(function(resolve, reject) {
-        fs.readFile('temp/wave.txt', function(err, data) {
-            if (err) resolve(false);
-            else {
-                let text = data.toString('utf8');
-                const levels = text.split('\n');
-                resolve(levels);
-            }
-        });   
-    });
-}
-
-function writeWaveform(waveform) {
-    return new Promise(function(resolve, reject) {
-        fs.writeFile('temp/wave.txt', waveform, function (err) {
-            if (err) resolve(err);
-            else {
-                console.log('waveform written');
-                resolve(true);
-            }
-        });   
-    });
-}
-
-function sampleWaveform(file, fps) {
-    let buffer = fs.readFileSync(file),
-        result = wav.decode(buffer),
-        data = result.channelData[0],
-        step = result.sampleRate / fps,
-        resampled = [],
-        conformed = [],
-        min = 0,
-        max = 0;
-
-    for (s in data) {
-        min = data[s] > min ? data[s] : min;
-        if (Number.isInteger(s / step)) {
-            sample = min;
-            resampled.push(sample);
-
-            max = sample > max ? sample : max;
-            min = 0;
-        }
-    }
-
-    for (s in resampled) {
-        conformed.push( (resampled[s] * (1 / max)).toFixed(4) );
-    }
-
-    console.log('waveform sampled');
-    return conformed.join('\n');
 }
 
 init();
