@@ -1,6 +1,7 @@
 const fs = require("mz/fs"),
       path = require('path'),
-      { exec } = require("child_process");
+      { exec } = require("child_process"),
+      wav = require('node-wav');
 
 console.clear();
 
@@ -27,7 +28,7 @@ const videoFile = ( args['vid'] && fs.existsSync(args['vid']) ) ? args['vid'] : 
 
 async function init() {
     const numOfFrames = await countFrames();
-    const waveform = await loadWaveform();
+    const waveform = await readWaveform();
 
     // require some args
     if ( !resolution || !framerate || !videoFile || !audioFile ) console.log('missing/invalid args!');
@@ -39,7 +40,9 @@ async function init() {
         }
 
         await extractFrames(videoFile, resolution);
-        analyzeAudio(audioFile, framerate);
+        written = await writeWaveform(sampleWaveform(audioFile, framerate));
+
+        if (written) console.log('run again');
     }
     // sequence and encode
     else {
@@ -61,7 +64,6 @@ function countFrames() {
     });
 }
 
-// separate video into individual frames
 function extractFrames(file, res) {
     let dir = 'temp/frames/';
     if (!fs.existsSync(dir)){
@@ -81,7 +83,6 @@ function extractFrames(file, res) {
     });
 }
 
-// create random sequence from frames
 function sequence(numOfFrames, waveform, fps, max, min) {
     let frames = [],
         selectedFrame = Math.floor(numOfFrames * Math.random()),
@@ -99,7 +100,7 @@ function sequence(numOfFrames, waveform, fps, max, min) {
         else if ( selectedFrame - offset < 0 ) reverse = false;
 
         if (reverse) selectedFrame = selectedFrame - offset;
-        else selectedFrame = selectedFrame + offset
+        else selectedFrame = selectedFrame + offset;
 
         if ( selectedFrame > numOfFrames-1 || selectedFrame < 0 ) {
             console.log('off the rails!');
@@ -119,7 +120,6 @@ function sequence(numOfFrames, waveform, fps, max, min) {
     return seq;
 }
 
-// write sequence to file
 function write(seq) {
     return new Promise(function(resolve, reject){
         fs.writeFile('temp/seq.txt', seq, function (err) {
@@ -130,7 +130,6 @@ function write(seq) {
     })
 }
 
-// encode sequence
 function encode(written, res, fps, aud, pre) {
     if (!written) process.exit();
 
@@ -156,7 +155,7 @@ function encode(written, res, fps, aud, pre) {
 }
 
 
-function loadWaveform() {
+function readWaveform() {
     return new Promise(function(resolve, reject) {
         fs.readFile('temp/wave.txt', function(err, data) {
             if (err) resolve(false);
@@ -169,91 +168,45 @@ function loadWaveform() {
     });
 }
 
-function analyzeAudio(soundfile, fps) {
-    fs.writeFile('temp/wave.txt', '');
+function writeWaveform(waveform) {
+    return new Promise(function(resolve, reject) {
+        fs.writeFile('temp/wave.txt', waveform, function (err) {
+            if (err) resolve(err);
+            else {
+                console.log('waveform written');
+                resolve(true);
+            }
+        });   
+    });
+}
 
-    // beats.js https://github.com/victordibia/beats
-    var AudioContext = require('web-audio-api').AudioContext
-    context = new AudioContext;
+function sampleWaveform(file, fps) {
+    let buffer = fs.readFileSync(file),
+        result = wav.decode(buffer),
+        data = result.channelData[0],
+        step = result.sampleRate / fps,
+        resampled = [],
+        conformed = [],
+        min = 0,
+        max = 0;
 
-    var pcmdata = [] ;
+    for (s in data) {
+        min = data[s] > min ? data[s] : min;
+        if (Number.isInteger(s / step)) {
+            sample = min;
+            resampled.push(sample);
 
-    //Note: I have no rights to these sound files and they are not created by me.
-    //You may downlaod and use your own sound file to further test this.
-    //
-    decodeSoundFile(soundfile);
-
-    /**
-     * [decodeSoundFile Use web-audio-api to convert audio file to a buffer of pcm data]
-     * @return {[type]} [description]
-     */
-    function decodeSoundFile(soundfile){
-      // console.log("decoding mp3 file ", soundfile, " ..... ")
-      fs.readFile(soundfile, function(err, buf) {
-        if (err) throw err
-        context.decodeAudioData(buf, function(audioBuffer) {
-          // console.log(audioBuffer.numberOfChannels, audioBuffer.length, audioBuffer.sampleRate, audioBuffer.duration);
-          pcmdata = (audioBuffer.getChannelData(0)) ;
-          samplerate = audioBuffer.sampleRate;
-          maxvals = [] ; max = 0 ;
-          // playsound(soundfile)
-          findPeaks(pcmdata, samplerate)
-        }, function(err) { throw err })
-      })
+            max = sample > max ? sample : max;
+            min = 0;
+        }
     }
 
-
-    /**
-     * [findPeaks Naive algo to identify peaks in the audio data, and wave]
-     * @param  {[type]} pcmdata    [description]
-     * @param  {[type]} samplerate [description]
-     * @return {[type]}            [description]
-     */
-    function findPeaks(pcmdata, samplerate){
-      var interval = (1/fps) * 1000 ; index = 0 ;
-      // 120fps = 0.00834, 60fps = 0.01668, 24fps = 0.0417
-      var step = Math.round( samplerate * (interval/1000) );
-      var max = 0 ;
-      var prevmax = 0 ;
-      var prevdiffthreshold = 0.3 ;
-
-      //loop through song in time with sample rate
-      var samplesound = setInterval(function() {
-        if (index >= pcmdata.length) { // pcmdata.length
-          clearInterval(samplesound);
-          // console.log("finished sampling sound")
-          console.clear();
-          console.log('waveform recorded\nrun again');
-          return;
-        }
-
-        for(var i = index; i < index + step ; i++){
-          max = pcmdata[i] > max ? pcmdata[i].toFixed(4)  : max ;
-        }
-
-        // Spot a significant increase? Potential peak
-        bars = getbars(max) ;
-        if(max-prevmax >= prevdiffthreshold){
-          // bars = bars + " == peak == "
-        }
-
-        // Print out mini equalizer on commandline
-        console.clear();
-        console.log("ANALYZING AUDIO / " +((index/pcmdata.length)*100).toFixed(2)+"% - "+ max, bars  );
-        fs.appendFileSync('temp/wave.txt', String(max+"\n"), function (err) {
-          if (err) throw err;
-        });
-        prevmax = max ; max = 0 ; index += step ;
-      }, interval,pcmdata);
+    for (s in resampled) {
+        conformed.push( (resampled[s] * (1 / max)).toFixed(4) );
     }
 
-    function getbars(val){
-      bars = ""
-      for (var i = 0 ; i < val*50 + 2 ; i++){
-        bars= bars + "|";
-      }
-      return bars ;
-    }
+    console.log('waveform sampled');
+    return conformed.join('\n');
 }
 
 init();
