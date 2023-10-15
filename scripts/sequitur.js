@@ -28,38 +28,28 @@ const videoFile = ( args['vid'] && fs.existsSync(args['vid']) ) ? args['vid'] : 
       initialize = args['init'];
 
 async function init() {
-    var numOfFrames = await countFrames(),
-        waveform = await readWaveform(),
-        diffs = await read('temp/diffs.json');
-
     // require some args
-    if ( !resolution || !framerate || !videoFile || !audioFile ) console.log('missing/invalid args!');
-    else {
-        // check for required files
-        let dir = 'temp';
-        if (!fs.existsSync(dir)){
-            fs.mkdirSync(dir);
-        }
-        if (!numOfFrames || initialize) {
-            await extractFrames(videoFile, resolution);
-            numOfFrames = await countFrames();
-        }
-        if (!diffs || initialize) {
-            diffs = await compareFrames(numOfFrames);
-            await write('temp/diffs.json', diffs);
-        }
-        if (!waveform || initialize) {
-            waveform = await sampleWaveform(audioFile, framerate);
-            await write('temp/wave.txt', waveform);
-        }
-
-        console.log(JSON.parse(diffs));
-        // sequence and encode
-        const seq = sequence(numOfFrames, waveform, framerate, maxLevel, minOffset);
-        const written = await write('temp/seq.txt', seq);
-        await encode(written, resolution, framerate, audioFile, preview);
+    if ( !resolution || !framerate || !videoFile || !audioFile ) {
+        console.log('missing/invalid args!');
+        return;
     }
+
+    // make or remove temp folder
+    const dir = 'temp';
+    if (initialize && fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true });
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+
+    // load data
+    const numOfFrames = await loadFrames(),
+          waveform = await readWaveform(),
+          diffs = await loadDiffs(numOfFrames);
+
+    // sequence and encode
+    const seq = sequence(numOfFrames, waveform, framerate, maxLevel, minOffset);
+    const written = await write('temp/seq.txt', seq);
+    await encode(written, resolution, framerate, audioFile, preview);
 }
+
 
 function write(file, data) {
     return new Promise(function(resolve, reject){
@@ -82,6 +72,20 @@ function read(file) {
     });
 }
 
+async function loadFrames() {
+    const dir = 'temp';
+    let numOfFrames = await countFrames();
+
+    
+
+    if (!numOfFrames) {
+        await extractFrames(videoFile, resolution);
+        numOfFrames = await countFrames();
+    }
+
+    return numOfFrames;
+}
+
 function countFrames() {
     return new Promise(function(resolve, reject) {
         fs.readdir('temp/frames/', (err, files) => {
@@ -95,7 +99,7 @@ function countFrames() {
 }
 
 function extractFrames(file, res) {
-    let dir = 'temp/frames/';
+    const dir = 'temp/frames/';
     if (!fs.existsSync(dir)){
         fs.mkdirSync(dir);
     }
@@ -114,11 +118,16 @@ function extractFrames(file, res) {
 }
 
 async function readWaveform() {
-    let data = await read('temp/wave.txt'),
-        text = data.toString('utf8'),
-        levels = text.split('\n');
-    if (!data) return false;
-    return levels;
+    const file = 'temp/wave.json',
+          data = await read(file);
+
+    if (data) waveform = JSON.parse(data);
+    else {
+        waveform = await sampleWaveform(audioFile, framerate);
+        await write(file, JSON.stringify(waveform));
+    }
+
+    return waveform;
 }
 
 function sampleWaveform(file, fps) {
@@ -147,7 +156,20 @@ function sampleWaveform(file, fps) {
     }
 
     console.log('waveform sampled');
-    return conformed.join('\n');
+    return conformed;
+}
+
+async function loadDiffs(numOfFrames) {
+    const file = 'temp/diffs.json';
+    let data = await read(file),
+    diffs = JSON.parse(data);
+
+    if (!data || Object.keys(diffs).length != numOfFrames) {
+        diffs = await compareFrames(numOfFrames);
+        await write(file, JSON.stringify(diffs));
+    }
+
+    return diffs;
 }
 
 async function getDiff(a, b, t) {
@@ -161,7 +183,7 @@ async function getDiff(a, b, t) {
         await fs.readFile("temp/frames/" + b + ".jpg"),
         options
     );
-    
+
     return parseFloat(data.misMatchPercentage);
 }
 
@@ -197,7 +219,7 @@ async function compareFrames(numOfFrames) {
         threshold = Math.ceil(max)+5;
     }
     console.clear();
-    return JSON.stringify(diffs);
+    return diffs;
 }
 
 function sequence(numOfFrames, waveform, fps, max, min) {
