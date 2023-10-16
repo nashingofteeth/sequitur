@@ -28,7 +28,7 @@ const videoFile = ( args['vid'] && fs.existsSync(args['vid']) ) ? args['vid'] : 
       initialize = args['init'];
 
 // require some args
-if ( !resolution || !framerate || !videoFile || !audioFile ) {
+if ( !resolution || !videoFile || !audioFile ) {
     console.log('missing/invalid args!');
     return;
 }
