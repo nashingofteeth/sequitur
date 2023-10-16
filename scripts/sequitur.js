@@ -189,7 +189,7 @@ async function compareFrames(numOfFrames) {
 }
 
 function sequence(numOfFrames, waveform, fps, max, min) {
-    let frames = [],
+    let seq = [],
         selectedFrame = Math.floor(numOfFrames * Math.random()),
         frameDuration = 1/fps,
         reverse = false;
@@ -212,20 +212,19 @@ function sequence(numOfFrames, waveform, fps, max, min) {
             process.exit();
         }
         
-        frames.push([selectedFrame, frameDuration]);
-    }
-
-    let seq = '';
-    for (f in frames) {
-        seq += "file 'frames/" + (frames[f][0]+1) + ".jpg'\n" +
-               "duration " + frames[f][1] + "\n";
+        seq.push([selectedFrame, frameDuration]);
     }
 
     return seq;
 }
 
 function encode(seq, res, fps, aud, pre) {
-    fs.writeFileSync('temp/seq.txt', seq);
+    let seqStr = '';
+    for (f in seq) {
+        seqStr += "file 'frames/" + (seq[f][0]+1) + ".jpg'\n" +
+                  "duration " + seq[f][1] + "\n";
+    }
+    fs.writeFileSync('temp/seq.txt', seqStr);
 
     let dir = 'exports';
     if (!fs.existsSync(dir))
