@@ -1,8 +1,8 @@
 const fs = require("mz/fs"),
       path = require('path'),
       { execSync } = require("child_process"),
-      compareImages = require('resemblejs/compareImages'),
-      wav = require('node-wav');
+      compareImages = require('resemblejs/compareImages')
+      sa = require('./sampleAudio');
 
 console.clear();
 
@@ -42,13 +42,13 @@ if (!fs.existsSync(dir))
 
 (async() => {
     // load data
-    const numOfFrames = await loadFrames(),
-          waveform = await readWaveform(),
+    const wave = await sa.wave(audioFile, framerate),
+          numOfFrames = await loadFrames(),
           diffs = await loadDiffs(numOfFrames);
 
     // sequence and encode
-    const seq = sequence(numOfFrames, waveform, framerate, maxLevel, minOffset);
-    await encode(seq, resolution, framerate, audioFile, preview);
+    const seq = sequence(numOfFrames, wave, framerate, maxLevel, minOffset);
+    encode(seq, resolution, framerate, audioFile, preview);
 })()
 
 
@@ -82,47 +82,6 @@ function extractFrames(file, res) {
         fs.mkdirSync(dir)
 
     execSync("ffmpeg -i " + file.replace(' ','\\ ') + " -vf scale=-1:" + res + " -qscale:v 2 temp/frames/%d.jpg -y");
-}
-
-async function readWaveform() {
-    const file = 'temp/wave.json';
-
-    if (fs.existsSync(file)) 
-        waveform = JSON.parse(fs.readFileSync(file));
-    else {
-        waveform = await sampleWaveform(audioFile, framerate);
-        fs.writeFileSync(file, JSON.stringify(waveform));
-    }
-
-    return waveform;
-}
-
-function sampleWaveform(file, fps) {
-    let buffer = fs.readFileSync(file),
-        result = wav.decode(buffer),
-        data = result.channelData[0],
-        step = result.sampleRate / fps,
-        resampled = [],
-        conformed = [],
-        min = 0,
-        max = 0;
-
-    for (s in data) {
-        min = data[s] > min ? data[s] : min;
-        if (Number.isInteger(s / step)) {
-            sample = min;
-            resampled.push(sample);
-
-            max = sample > max ? sample : max;
-            min = 0;
-        }
-    }
-
-    for (s in resampled) {
-        conformed.push( (resampled[s] * (1 / max)).toFixed(4) );
-    }
-
-    return conformed;
 }
 
 async function loadDiffs(numOfFrames) {
@@ -188,14 +147,14 @@ async function compareFrames(numOfFrames) {
     return diffs;
 }
 
-function sequence(numOfFrames, waveform, fps, max, min) {
+function sequence(numOfFrames, wave, fps, max, min) {
     let seq = [],
         selectedFrame = Math.floor(numOfFrames * Math.random()),
         frameDuration = 1/fps,
         reverse = false;
 
-    for (let i = 0; i < (waveform.length-1); i++) {
-        let level = waveform[i],
+    for (let i = 0; i < (wave.length-1); i++) {
+        let level = wave[i],
             maxLevel = max || 1,
             minOffset = min || 0,
             maxOffset = Math.round(numOfFrames * (level * maxLevel));
