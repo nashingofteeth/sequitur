@@ -36,16 +36,16 @@ async function compareFrames(numOfFrames) {
         max = 0;
         for (b = 1; b <= numOfFrames; b++) {
             if ( b == a ) diff = 0;
-            else if ( b == a-1) diff = diffs[a-1][b];
+			else if ( b == a-1 ) diff = diffs[a-1][b+1];
             else diff = await getDiff(a, b, threshold);
 
             diffs[a][b] = parseFloat(diff);
-            max = diff > max ? diff : max; 
+            max = diff > max ? diff : max;;
         }
 
         threshold = Math.ceil(max)+5;
     }
-    
+
     console.clear();
     return diffs;
 }
