@@ -15,6 +15,9 @@ exports.wave = async function (audioFile, framerate) {
 }
 
 function sampleAudio(file) {
+    console.clear();
+    console.log('sampling audio...');
+
     let buffer = fs.readFileSync(file),
         data = wav.decode(buffer);
 
