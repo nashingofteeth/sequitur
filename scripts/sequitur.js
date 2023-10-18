@@ -8,29 +8,17 @@ const fs = require("mz/fs"),
 console.clear();
 
 // get args
-const validArgs = ['vid', 'aud', 'res', 'fps', 'pre', 'max', 'min', 'init'];
-let args = {}
-for ( a in validArgs) {
-    const index = process.argv.indexOf('--' + validArgs[a]);
-    let value;
-    if (index > -1) {
-        value = process.argv[index + 1];
-        args[validArgs[a]] = (value || true);
-    }
-    else args[validArgs[a]] = false;
-}
+var args = require('minimist')(process.argv.slice(2));
 
-const video = ( args['vid'] && fs.existsSync(args['vid']) ) ? args['vid'] : false,
-      audio = ( args['aud'] && fs.existsSync(args['aud']) ) ? args['aud'] : false,
-      resolution = parseInt(args['res']),
-      framerate = args['fps'] ? parseInt(args['fps']) : 24,
-      preview = args['pre'],
-      maxLevel = parseFloat(args['max']),
-      minOffset = parseFloat(args['min']),
-      initialize = args['init'];
+const video = ( args['v'] && fs.existsSync(args['v']) ) ? args['v'] : false,
+      audio = ( args['a'] && fs.existsSync(args['a']) ) ? args['a'] : false,
+      framerate = args['fps'] ? parseInt(args['r']) : 24,
+      size = args['s'] ? parseInt(args['s']) : 240,
+      preview = args['p'],
+      initialize = args['i'];
 
 // require some args
-if ( !resolution || !video || !audio ) {
+if ( !video || !audio ) {
     console.log('missing/invalid args!');
     return;
 }
@@ -44,11 +32,11 @@ if (!fs.existsSync(dir))
 
 (async() => {
     // load data
-    const wave = await sampleAudio.wave(audio, framerate),
-          frames = await extractFrames.frames(video, resolution),
-          diffs = await compareFrames.diffs(frames);
+    const frames = await extractFrames.frames(video, size),
+          diffs = await compareFrames.diffs(frames),
+          wave = await sampleAudio.wave(audio, framerate);
 
     // sequence and encode
-    const sequence = skipSequencer.sequence(frames, wave, framerate, maxLevel, minOffset);
-    exportSequence.concat(sequence, resolution, framerate, audio, preview);
+    const sequence = skipSequencer.sequence(frames, wave, framerate, args);
+    exportSequence.concat(sequence, size, framerate, audio, preview);
 })()

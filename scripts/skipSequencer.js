@@ -1,4 +1,7 @@
-exports.sequence = function(numOfFrames, wave, fps, max, min) {
+exports.sequence = function(numOfFrames, wave, fps, args) {
+    const max = parseFloat(args['max']),
+          min = parseFloat(args['min']);
+
     let seq = [],
         selectedFrame = Math.floor(numOfFrames * Math.random()),
         frameDuration = 1/fps,
