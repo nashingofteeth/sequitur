@@ -3,14 +3,14 @@ const fs = require("mz/fs"),
       { execSync } = require("child_process");
 
 exports.frames = async function(videoFile, resolution) {
-    let numOfFrames = countFrames();
+    let frameCount = countFrames();
 
-    if (!numOfFrames) {
+    if (!frameCount) {
         extractFrames(videoFile, resolution);
-        numOfFrames = countFrames();
+        frameCount = countFrames();
     }
 
-    return numOfFrames;
+    return frameCount;
 }
 
 function countFrames() {

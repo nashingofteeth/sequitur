@@ -46,14 +46,14 @@ function extractFrames() {
 }
 
 // generate video for each frame 
-async function generateVideos(numOfFrames) {
-    for (i = 0; i < numOfFrames; i++) {
-        await sequence(i, numOfFrames);
+async function generateVideos(frameCount) {
+    for (i = 0; i < frameCount; i++) {
+        await sequence(i, frameCount);
     }
 }
 
 // create random sequence from frames
-async function sequence(primaryFrame, numOfFrames) {
+async function sequence(primaryFrame, frameCount) {
     let frames = [],
         selectedFrame = 0,
         frameDuration = 0,
@@ -62,7 +62,7 @@ async function sequence(primaryFrame, numOfFrames) {
 
     for (let i = 0; i < loops; i++) {
         frameDuration = 1/frameRates[Math.floor(Math.random()*frameRates.length)];
-        selectedFrame = Math.floor(Math.random()*numOfFrames);
+        selectedFrame = Math.floor(Math.random()*frameCount);
 
         // end sequencing if target duration is reached
         if (totalDuration + frameDuration > targetDuration) {
