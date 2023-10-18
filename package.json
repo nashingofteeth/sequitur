@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "fs": "^0.0.1-security",
+    "minimist": "^1.2.8",
     "mz": "^2.7.0",
     "node-wav": "^0.0.2",
     "resemblejs": "^5.0.0"
