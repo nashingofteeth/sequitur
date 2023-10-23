@@ -2,7 +2,7 @@ const fs = require("mz/fs"),
       path = require('path'),
       { execSync } = require("child_process");
 
-exports.frames = async function(videoFile, resolution) {
+exports.frames = function(videoFile, resolution) {
     let frameCount = countFrames();
 
     if (!frameCount) {
