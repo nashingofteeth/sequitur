@@ -1,7 +1,7 @@
 const fs = require("mz/fs"),
       wav = require('node-wav');
 
-exports.wave = async function (audioFile, framerate) {
+exports.wave = function (audioFile, framerate) {
     const outputFile = 'temp/wave.json';
 
     if (fs.existsSync(outputFile)) 
