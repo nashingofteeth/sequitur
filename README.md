@@ -2,7 +2,6 @@
 video frame sequencer using audio waveforms
 
 ## to do
-- create data object for sequencer to use
 - rewrite interposer sequencer
 - create new sequencer that uses image diffs
 
@@ -12,4 +11,4 @@ video frame sequencer using audio waveforms
 - `-r` frames per second (24fps default)
 - `-s` export height (240p default, input ratio maintained)
 - `-p` preview switch: exports lossy file, increasing encoding speed
-- `-i` initialize: reload sequencing data
+- `-i` initialize: reload data
