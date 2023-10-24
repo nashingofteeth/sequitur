@@ -19,7 +19,7 @@ function countFrames() {
         files = fs.readdirSync(dir);
         if (files.length < 2) return false;
         else {
-            const frames = files.filter(el => path.extname(el) === '.jpg');
+            const frames = files.filter(el => path.extname(el) === '.bmp');
             return frames.length;
         }
     }
@@ -33,5 +33,5 @@ function extractFrames(file, res) {
 
     console.clear();
     console.log('extracting frames...');
-    execSync("ffmpeg -i " + file.replace(' ','\\ ') + " -vf scale=-1:" + res + " -qscale:v 2 data/frames/%d.jpg -y");
+    execSync("ffmpeg -i " + file.replace(' ','\\ ') + " -vf scale=-1:" + res + " data/frames/%d.bmp -y");
 }

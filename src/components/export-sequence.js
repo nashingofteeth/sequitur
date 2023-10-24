@@ -4,7 +4,7 @@ const fs = require("mz/fs"),
 exports.concat = function(seq, res, fps, aud, pre) {
     let seqStr = '';
     for (f in seq) {
-        seqStr += "file 'frames/" + (seq[f][0]+1) + ".jpg'\n" +
+        seqStr += "file 'frames/" + (seq[f][0]+1) + ".bmp'\n" +
                   "duration " + seq[f][1] + "\n";
     }
     fs.writeFileSync('data/seq.txt', seqStr);

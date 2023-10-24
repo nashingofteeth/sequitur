@@ -2,7 +2,7 @@ const fs = require("mz/fs");
 const { exec } = require("child_process");
 
 exec('mkdir data/frames1 data/frames2');
-var decode = "ffmpeg -i input/video1.mp4 -qscale:v 2 data/frames1/%d.jpg; ffmpeg -i input/video2.mp4 -qscale:v 2 data/frames2/%d.jpg"
+var decode = "ffmpeg -i input/video1.mp4 -qscale:v 2 data/frames1/%d.bmp; ffmpeg -i input/video2.mp4 -qscale:v 2 data/frames2/%d.bmp"
 
 console.log('DECODING...');
 exec(decode, (error, stdout, stderr) => {
@@ -52,7 +52,7 @@ function sequence(f) {
 
         // console.log(l + " / " + levels.length);
 
-        out += "file 'frames" + folder + "/" + l + ".jpg'\n" +
+        out += "file 'frames" + folder + "/" + l + ".bmp'\n" +
                      "duration " + 1/frameRate + "\n";
 
     }

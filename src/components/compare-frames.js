@@ -57,8 +57,8 @@ async function getDiff(a, b, t) {
     };
 
     const data = await compareImages(
-        await fs.readFile("data/frames/" + a + ".jpg"),
-        await fs.readFile("data/frames/" + b + ".jpg"),
+        await fs.readFile("data/frames/" + a + ".bmp"),
+        await fs.readFile("data/frames/" + b + ".bmp"),
         options
     );
 
