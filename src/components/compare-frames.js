@@ -2,7 +2,7 @@ const fs = require("mz/fs"),
 	  compareImages = require('resemblejs/compareImages');
 
 exports.diffs = async function (frameCount) {
-    const file = 'temp/diffs.json';
+    const file = 'data/diffs.json';
 
     if (fs.existsSync(file))
         diffs = JSON.parse(fs.readFileSync(file));
@@ -57,8 +57,8 @@ async function getDiff(a, b, t) {
     };
 
     const data = await compareImages(
-        await fs.readFile("temp/frames/" + a + ".jpg"),
-        await fs.readFile("temp/frames/" + b + ".jpg"),
+        await fs.readFile("data/frames/" + a + ".jpg"),
+        await fs.readFile("data/frames/" + b + ".jpg"),
         options
     );
 

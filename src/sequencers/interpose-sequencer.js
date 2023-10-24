@@ -1,8 +1,8 @@
 const fs = require("mz/fs");
 const { exec } = require("child_process");
 
-exec('mkdir temp/frames1 temp/frames2');
-var decode = "ffmpeg -i input/video1.mp4 -qscale:v 2 temp/frames1/%d.jpg; ffmpeg -i input/video2.mp4 -qscale:v 2 temp/frames2/%d.jpg"
+exec('mkdir data/frames1 data/frames2');
+var decode = "ffmpeg -i input/video1.mp4 -qscale:v 2 data/frames1/%d.jpg; ffmpeg -i input/video2.mp4 -qscale:v 2 data/frames2/%d.jpg"
 
 console.log('DECODING...');
 exec(decode, (error, stdout, stderr) => {
@@ -17,10 +17,10 @@ exec(decode, (error, stdout, stderr) => {
     // console.log(`stdout: ${stdout}`);
 
     
-    fs.readdir('temp/frames1/', (err, files) => {
+    fs.readdir('data/frames1/', (err, files) => {
         videoALength = files.length;
 
-        fs.readdir('temp/frames2/', (err, files) => {
+        fs.readdir('data/frames2/', (err, files) => {
             videoBLength = files.length;
 
             if (videoALength > videoBLength) sequence(videoBLength);
@@ -58,7 +58,7 @@ function sequence(f) {
     }
 
 
-    fs.writeFile('temp/seq.txt', out, function (err) {
+    fs.writeFile('data/seq.txt', out, function (err) {
         if (err) throw err;
 
         encode();
@@ -79,7 +79,7 @@ function encode(a) {
     let cTime = cHour + '' + cMinute + '' + cSecond;
     let dateTime = cDate + '' + cTime;
 
-    const encode = "ffmpeg -f concat -i temp/seq.txt -i input/music.mp3 -vsync 1 -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+frameRate+" exports/interposition_"+dateTime+".mov -y;";
+    const encode = "ffmpeg -f concat -i data/seq.txt -i input/music.mp3 -vsync 1 -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r "+frameRate+" exports/interposition_"+dateTime+".mov -y;";
 
     console.log('ENCODING...');
 

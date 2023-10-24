@@ -1,9 +1,13 @@
-const seq = require('../src/sequitur'),
+const seq = require('../sequitur'),
       frameCount = seq.frameCount(),
       wave = seq.wave(),
       frameDuration = 1/seq.framerate,
       maxLevel = seq.args['max'] ? parseFloat(seq.args['max']) : 1,
       minOffset = seq.args['min'] ? parseFloat(seq.args['min']) : 0;
+
+(async() => {
+    console.log(await seq.diffs());
+})()
 
 var sequence = [],
     selectedFrame = Math.floor(frameCount * Math.random()),

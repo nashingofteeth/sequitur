@@ -21,7 +21,7 @@ frameRates.splice(0, 1); // remove longer durations
 
 
 // count frames, initiate
-fs.readdir('temp/frames/', (err, files) => {
+fs.readdir('data/frames/', (err, files) => {
     const frames = files.filter(el => path.extname(el) === '.jpg');
 
     if (!frames || frames.length < 2) {
@@ -34,10 +34,10 @@ fs.readdir('temp/frames/', (err, files) => {
 
 // separate video into individual frames
 function extractFrames() {
-    exec('mkdir temp temp/frames exports');
+    exec('mkdir data data/frames exports');
 
-    const previewFrames = "ffmpeg -i input/video.mov -vf scale=-1:"+outputResolution+" -qscale:v 2 temp/frames/%d.jpg -y",
-          fullFrames = "ffmpeg -i input/video.mov -vf scale=-1:"+inputResolution+" -qscale:v 2 temp/frames/%d.jpg -y";
+    const previewFrames = "ffmpeg -i input/video.mov -vf scale=-1:"+outputResolution+" -qscale:v 2 data/frames/%d.jpg -y",
+          fullFrames = "ffmpeg -i input/video.mov -vf scale=-1:"+inputResolution+" -qscale:v 2 data/frames/%d.jpg -y";
 
     exec(fullFrames, (error, stdout, stderr) => {
         // console.log(error, stdout, stderr);
@@ -93,7 +93,7 @@ async function sequence(primaryFrame, frameCount) {
 // write sequence to file
 function write(seq, primaryFrame) {
     return new Promise(function(resolve, reject){
-        fs.writeFile('temp/seq.txt', seq, function (err) {
+        fs.writeFile('data/seq.txt', seq, function (err) {
             if (err) reject(err);
             resolve();
             console.log((primaryFrame+1) + ' written');
@@ -103,8 +103,8 @@ function write(seq, primaryFrame) {
 
 // encode sequence
 function encode(primaryFrame) {
-    const preview = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+outputResolution+" -vcodec libx264 -crf 30 -pix_fmt yuv420p -fps_mode vfr -r "+maxFrameRate+" exports/v_"+(primaryFrame+1)+".mp4 -y",
-          full = "ffmpeg -f concat -i temp/seq.txt -vf scale=-1:"+outputResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -fps_mode vfr -r "+maxFrameRate+" exports/v_"+(primaryFrame+1)+".mov -y";
+    const preview = "ffmpeg -f concat -i data/seq.txt -vf scale=-1:"+outputResolution+" -vcodec libx264 -crf 30 -pix_fmt yuv420p -fps_mode vfr -r "+maxFrameRate+" exports/v_"+(primaryFrame+1)+".mp4 -y",
+          full = "ffmpeg -f concat -i data/seq.txt -vf scale=-1:"+outputResolution+" -c:v prores_ks -profile:v 2 -c:a pcm_s16le -fps_mode vfr -r "+maxFrameRate+" exports/v_"+(primaryFrame+1)+".mov -y";
 
     return new Promise(function(resolve, reject){
         exec(full, (err, stdout, stderr) => {
