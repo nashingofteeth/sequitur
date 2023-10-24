@@ -3,9 +3,7 @@
   "version": "5.0.0",
   "description": "video sequencer",
   "private": true,
-  "scripts": {
-    "start": "node scripts/sequitur.js"
-  },
+  "main": "src/sequitur.js",
   "dependencies": {
     "fs": "^0.0.1-security",
     "minimist": "^1.2.8",
