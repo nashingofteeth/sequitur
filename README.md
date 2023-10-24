@@ -1,5 +1,5 @@
 # SEQUITUR
-video frame sequencer using audio waveforms
+frame-by-frame video sequencer. requires FFMPEG.
 
 ## to do
 - rewrite interposer sequencer
