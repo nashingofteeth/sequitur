@@ -31,7 +31,6 @@ function extractFrames(file, res) {
     if (!fs.existsSync(dir))
         fs.mkdirSync(dir)
 
-    console.clear();
     console.log('extracting frames...');
     execSync("ffmpeg -i " + file.replace(' ','\\ ') + " -vf scale=-1:" + res + " data/frames/%d.bmp -y");
 }
