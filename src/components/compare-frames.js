@@ -29,7 +29,6 @@ async function compareFrames(frameCount) {
         progress = Math.round((a/frameCount)*100);
 
         message = (a < 2 || a > frameCount-1) ? 'comparing frames...' : 'comparing frames - ' + progress + '%, ' + timeLeft + ' left @ ' + Math.round(diffsPerSec) + '/s';
-        console.clear();
         console.log(message);
         
         diffs[a] = {};
@@ -46,7 +45,6 @@ async function compareFrames(frameCount) {
         threshold = Math.ceil(max)+5;
     }
 
-    console.clear();
     return diffs;
 }
 
