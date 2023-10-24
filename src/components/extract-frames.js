@@ -14,7 +14,7 @@ exports.frames = function(videoFile, resolution) {
 }
 
 function countFrames() {
-    const dir = 'temp/frames/';
+    const dir = 'data/frames/';
     if (fs.existsSync(dir)) {
         files = fs.readdirSync(dir);
         if (files.length < 2) return false;
@@ -27,11 +27,11 @@ function countFrames() {
 }
 
 function extractFrames(file, res) {
-    const dir = 'temp/frames/';
+    const dir = 'data/frames/';
     if (!fs.existsSync(dir))
         fs.mkdirSync(dir)
 
     console.clear();
     console.log('extracting frames...');
-    execSync("ffmpeg -i " + file.replace(' ','\\ ') + " -vf scale=-1:" + res + " -qscale:v 2 temp/frames/%d.jpg -y");
+    execSync("ffmpeg -i " + file.replace(' ','\\ ') + " -vf scale=-1:" + res + " -qscale:v 2 data/frames/%d.jpg -y");
 }

@@ -20,18 +20,18 @@ if ( !video || !audio ) {
     return;
 }
 
-// make or remove temp folder
-const dir = 'temp';
+// make or remove data folder
+const dir = 'data';
 if (initialize && fs.existsSync(dir))
     fs.rmSync(dir, { recursive: true, force: true });
 if (!fs.existsSync(dir))
     fs.mkdirSync(dir);
 
 // load data
-exports.frameCount = function () { return require("./extract-frames").frames(video, size); }
+exports.frameCount = function () { return require("./components/extract-frames").frames(video, size); }
 exports.diffs = function () { 
-        const frameCount = require("./extract-frames").frames(video, size);
-        return require('./compare-frames').diffs(frameCount);
+        const frameCount = require("./components/extract-frames").frames(video, size);
+        return require('./components/compare-frames').diffs(frameCount);
 }
-exports.wave = function () { return require('./sample-audio').wave(audio, framerate); }
-exports.export = function (sequence) { require('./export-sequence').concat(sequence, size, framerate, audio, preview); }
+exports.wave = function () { return require('./components/sample-audio').wave(audio, framerate); }
+exports.export = function (sequence) { require('./components/export-sequence').concat(sequence, size, framerate, audio, preview); }
