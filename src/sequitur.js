@@ -24,17 +24,17 @@ exports.framerate = framerate;
 exports.args = args;
 
 // data functions
-exports.frameCount = function () {
-    return require("./components/extract-frames").frames(video, size);
+exports.frameCount = function (v = video, s = size) {
+    return require("./components/extract-frames").frames(v, s);
 }
-exports.diffs = function () { 
-        const frameCount = require("./components/extract-frames").frames(video, size);
+exports.diffs = function (v = video, s = size) { 
+        const frameCount = require("./components/extract-frames").frames(v, s);
         return require('./components/compare-frames').diffs(frameCount);
 }
-exports.wave = function () {
-    return require('./components/sample-audio').wave(audio, framerate);
+exports.wave = function (a = audio, r = framerate) {
+    return require('./components/sample-audio').wave(a, r);
 }
 
-exports.export = function (sequence) {
-    require('./components/export-sequence').concat(sequence, size, framerate, audio, preview);
+exports.export = function (sequence, s = size, r = framerate, a = audio, p = preview) {
+    require('./components/export-sequence').concat(sequence, s, r, a, p);
 }
