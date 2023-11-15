@@ -23,6 +23,12 @@ for (v in videos)
 sequence = '';
 for (i = 1; i <= videos[longest].frames; i++) {
     for (v in videos) {
+        if (
+            seq.args['overwrite'] &&
+            videos[v] != videos[longest] &&
+            i < videos[longest].frames-1
+        ) i++;
+
         if (seq.args['stretch']) {
             if ( videos[v] != videos[longest] )
                 frame = Math.ceil((i / videos[longest].frames) * videos[v].frames);
