@@ -1,6 +1,6 @@
 const fs = require("mz/fs"),
       args = require('minimist')(process.argv.slice(2)),
-      framerate = args['r'] ? parseInt(args['r']) : 24,
+      framerate = args['r'] ? parseFloat(args['r']) : 24,
       size = args['s'] ? parseInt(args['s']) : 240,
       preview = args['p'],
       initialize = args['i'];
