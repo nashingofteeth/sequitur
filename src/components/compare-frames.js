@@ -1,20 +1,21 @@
 const fs = require("mz/fs"),
+      path = require('path'),
 	  compareImages = require('resemblejs/compareImages');
 
-exports.diffs = async function (frameCount) {
-    const file = 'data/diffs.json';
+exports.diffs = async function (file, frameCount) {
+    const outputFile = 'data/diffs_' + path.basename(file) + '.json';
 
-    if (fs.existsSync(file))
-        diffs = JSON.parse(fs.readFileSync(file));
+    if (fs.existsSync(outputFile))
+        diffs = JSON.parse(fs.readFileSync(outputFile));
     else {
-        diffs = await compareFrames(frameCount);
-        fs.writeFileSync(file, JSON.stringify(diffs));
+        diffs = await compareFrames(file, frameCount);
+        fs.writeFileSync(outputFile, JSON.stringify(diffs));
     }
 
     return diffs;
 }
 
-async function compareFrames(frameCount) {
+async function compareFrames(file, frameCount) {
     let diffs = {},
         timecode = [],
         threshold = 100;
@@ -36,7 +37,7 @@ async function compareFrames(frameCount) {
         for (b = 1; b <= frameCount; b++) {
             if ( b == a ) diff = 0;
 			else if ( b == a-1 ) diff = diffs[a-1][b+1];
-            else diff = await getDiff(a, b, threshold);
+            else diff = await getDiff(file, a, b, threshold);
 
             diffs[a][b] = parseFloat(diff);
             max = diff > max ? diff : max;;
@@ -48,15 +49,15 @@ async function compareFrames(frameCount) {
     return diffs;
 }
 
-async function getDiff(a, b, t) {
+async function getDiff(f, a, b, t) {
     const options = {
         returnEarlyThreshold: t,
         ignore: "colors"
     };
 
     const data = await compareImages(
-        await fs.readFile("data/frames/" + a + ".bmp"),
-        await fs.readFile("data/frames/" + b + ".bmp"),
+        await fs.readFile('data/frames_' + path.basename(f) + '/' + a + '.bmp'),
+        await fs.readFile('data/frames_' + path.basename(f) + '/' + b + '.bmp'),
         options
     );
 
