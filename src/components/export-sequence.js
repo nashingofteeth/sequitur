@@ -1,10 +1,11 @@
 const fs = require("mz/fs"),
+      path = require('path'),
       { execSync } = require("child_process");
       
-exports.concat = function(seq, res, fps, aud, pre) {
+exports.concat = function(seq, res, fps, vid, aud, pre) {
     let seqStr = '';
     for (f in seq) {
-        seqStr += "file 'frames/" + (seq[f][0]+1) + ".bmp'\n" +
+        seqStr += "file 'frames_" + path.basename(vid) + "/" + (seq[f][0]+1) + ".bmp'\n" +
                   "duration " + seq[f][1] + "\n";
     }
     fs.writeFileSync('data/seq.txt', seqStr);
