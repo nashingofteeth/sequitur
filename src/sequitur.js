@@ -15,7 +15,7 @@ if (initialize && fs.existsSync(dir))
 if (!fs.existsSync(dir))
     fs.mkdirSync(dir);
 
-function exists(files) {
+function requireFiles(files) {
     for ( f in files ) {
         if ( !files[f] || !fs.existsSync(files[f]) ) {
             console.log('files not provided or do not exist!');
@@ -26,20 +26,20 @@ function exists(files) {
 
 // data functions
 exports.frameCount = function (v = args['v'], s = size) {
-    exists([v]);
+    requireFiles([v]);
     return require("./components/extract-frames").frames(v, s);
 }
 exports.diffs = function (v = args['v'], s = size) { 
-    exists([v]);
+    requireFiles([v]);
     const frameCount = require("./components/extract-frames").frames(v, s);
     return require('./components/compare-frames').diffs(v, frameCount);
 }
 exports.wave = function (a = args['a'], r = framerate) {
-    exists([a]);
+    requireFiles([a]);
     return require('./components/sample-audio').wave(a, r);
 }
 
 exports.export = function (sequence, s = size, r = framerate, v = args['v'], a = args['a'], p = preview) {
-    exists([v, a])
+    // requireFiles([v]);
     require('./components/export-sequence').concat(sequence, s, r, v, a, p);
 }
