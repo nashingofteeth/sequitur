@@ -2,7 +2,6 @@
 frame-by-frame video sequencer. requires FFMPEG.
 
 ## to do
-- rewrite interposer sequencer
 - create new sequencer that uses image diffs
 
 ## arguments
