@@ -15,12 +15,23 @@ if (initialize && fs.existsSync(dir))
 if (!fs.existsSync(dir))
     fs.mkdirSync(dir);
 
-function requireFiles(files) {
-    for ( f in files ) {
-        if ( !files[f] || !fs.existsSync(files[f]) ) {
-            console.log('files not provided or do not exist!');
-            process.exit();
+function requireFiles(args) {
+    var valid = true;
+
+    for ( a in args ) {
+        if (Array.isArray(args[a])) {
+            for (f in args[a])
+                if ( !fs.existsSync(args[a][f]) )
+                    valid = false;
         }
+        
+        else if ( !args[a] || !fs.existsSync(args[a]) )
+            valid = false;
+    }
+
+    if ( !valid ) {
+        console.log('files not provided or do not exist!');
+        process.exit();
     }
 }
 
@@ -40,6 +51,6 @@ exports.wave = function (a = args['a'], r = framerate) {
 }
 
 exports.export = function (sequence, s = size, r = framerate, v = args['v'], a = args['a'], p = preview) {
-    // requireFiles([v]);
+    requireFiles([v]);
     require('./components/export-sequence').concat(sequence, s, r, v, a, p);
 }
