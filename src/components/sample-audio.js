@@ -1,13 +1,14 @@
 const fs = require("mz/fs"),
+      path = require('path'),
       wav = require('node-wav');
 
-exports.wave = function (audioFile, framerate) {
-    const outputFile = 'data/wave.json';
+exports.wave = function (file, framerate) {
+    const outputFile = 'data/wave_' + path.basename(file) + '.json';
 
     if (fs.existsSync(outputFile)) 
         wave = JSON.parse(fs.readFileSync(outputFile));
     else {
-        wave = resampleAudio(audioFile, framerate);
+        wave = resampleAudio(file, framerate);
         fs.writeFileSync(outputFile, JSON.stringify(wave));
     }
 
