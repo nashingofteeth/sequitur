@@ -25,7 +25,7 @@ for (let i = 0; i < (wave.length-1); i++) {
         process.exit();
     }
     
-    sequence.push([selectedFrame, frameDuration]);
+    sequence.push([selectedFrame+1, frameDuration]);
 }
 
 seq.export(sequence);
