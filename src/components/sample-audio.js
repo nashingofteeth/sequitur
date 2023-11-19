@@ -23,10 +23,12 @@ function sampleAudio(file) {
 
     return data;
 }
+
 function resampleAudio(file, fps) {
     let sample = sampleAudio(file),
         data = sample.channelData[0],
-        step = sample.sampleRate / fps,
+        step = Math.round(sample.sampleRate / fps),
+        count = 0,
         resampled = [],
         conformed = [],
         min = 0,
@@ -34,7 +36,9 @@ function resampleAudio(file, fps) {
 
     for (s in data) {
         min = data[s] > min ? data[s] : min;
-        if (Number.isInteger(s / step)) {
+        count++;
+        if (count == step) {
+            count = 0;
             sample = min;
             resampled.push(sample);
 
