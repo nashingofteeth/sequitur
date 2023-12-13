@@ -12,7 +12,9 @@ function sequence(wave, diffs) {
 		frameCount = Object.keys(diffs).length,
 		frame = '1',
 		nextFrame = frame,
-		occurance = [];
+		occurance = [],
+		diffLimit = seq.args['dl'] || 1, // set between 0 and 1
+		marginThreshold = seq.args['mt'] || 0; // set between 0 and 1
 
 	for (f in diffs) {
 		occurance[f] = {
@@ -24,8 +26,12 @@ function sequence(wave, diffs) {
 	for (a in wave) {
 		let amplitude = parseFloat(wave[a]),
 			currentDiffsSorted = sortDiffs(diffs[frame]),
-			nextFrameIndex = Math.floor((frameCount - 1) * amplitude), // use amplitude as diffs index
+			nextFrameIndex = Math.floor( (frameCount - 1) * (amplitude * diffLimit) ), // use amplitude as diffs index
 			nextFrame = currentDiffsSorted.array[String(nextFrameIndex)][0]
+			margin = 0;
+			
+		// amplitude threshold for frame reuse margin
+		if ( amplitude < marginThreshold )
 			margin = frameCount - 1;
 
 		// restrict frame reuse
