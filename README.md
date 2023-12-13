@@ -1,9 +1,6 @@
 # SEQUITUR
 frame-by-frame video sequencer. requires FFMPEG.
 
-## to do
-- create new sequencer that uses image diffs
-
 ## arguments
 - `-v` video file (.mov recommended)
 - `-a` audio file (.wav required)
