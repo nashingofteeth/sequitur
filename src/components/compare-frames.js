@@ -2,8 +2,9 @@ const fs = require("mz/fs"),
       path = require('path'),
 	  compareImages = require('resemblejs/compareImages');
 
-exports.diffs = async function (file, frameCount) {
+async function diffs(file, frameCount, sort = false) {
     const outputFile = 'data/diffs_' + path.basename(file) + '.json';
+    let diffs = null;
 
     if (fs.existsSync(outputFile))
         diffs = JSON.parse(fs.readFileSync(outputFile));
@@ -12,6 +13,8 @@ exports.diffs = async function (file, frameCount) {
         fs.writeFileSync(outputFile, JSON.stringify(diffs));
     }
 
+    if (sort) diffs = sortedDiffs(diffs);
+    
     return diffs;
 }
 
@@ -63,3 +66,23 @@ async function getDiff(f, a, b, t) {
 
     return parseFloat(data.misMatchPercentage);
 }
+
+function sortedDiffs(o) {
+    var sortedDiffs = {};
+    for (f in o) {
+        var sorted = [];
+
+        for (d in o[f])
+            sorted.push([d, o[f][d]]);
+
+        sorted.sort(function(a, b) {
+            return a[1] - b[1];
+        });
+
+        sortedDiffs[f] = sorted;
+    }
+
+    return sortedDiffs;
+}
+
+exports.diffs = diffs;

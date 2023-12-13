@@ -40,10 +40,10 @@ exports.frameCount = function (v = args['v'], s = size) {
     requireFiles([v]);
     return require("./components/extract-frames").frames(v, s);
 }
-exports.diffs = function (v = args['v'], s = size) { 
+exports.diffs = function (v = args['v'], s = size, sorted) { 
     requireFiles([v]);
     const frameCount = require("./components/extract-frames").frames(v, s);
-    return require('./components/compare-frames').diffs(v, frameCount);
+    return require('./components/compare-frames').diffs(v, frameCount, sorted);
 }
 exports.wave = function (a = args['a'], r = framerate) {
     requireFiles([a]);
