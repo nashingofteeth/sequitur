@@ -13,8 +13,8 @@ function sequence(wave, diffs) {
 		currentFrame = '1',
 		nextFrame = currentFrame,
 		occurance = [],
-		diffLimit = seq.args['dl'] || 1, // set between 0 and 1
-		marginThreshold = seq.args['mt'] || 0; // set between 0 and 1
+		diffLimit = seq.args['limit'] || 1, // set between 0 and 1
+		margin = seq.args['margin'] || 1; // set between 1 and frameCount
 
 	for (f in diffs) {
 		occurance[f] = {
@@ -23,17 +23,13 @@ function sequence(wave, diffs) {
 		}
 	}
 
-	// to do: add playhead option for sequencial frames below threshold
 	for (a in wave) {
 		let amplitude = parseFloat(wave[a]),
 			currentDiffs = diffs[currentFrame],
+			playhead = Math.ceil( a * (frameCount / wave.length) ),
+			maxDistance = seq.args['stretch'] ? margin + (frameCount * amplitude) : frameCount,
 			nextFrameIndex = Math.floor( (frameCount - 1) * (amplitude * diffLimit) ), // use amplitude as diffs index
-			nextFrame = currentDiffs[String(nextFrameIndex)][0]
-			margin = 0;
-
-		// amplitude threshold for frame reuse margin
-		if ( amplitude < marginThreshold )
-			margin = frameCount - 1;
+			nextFrame = currentDiffs[String(nextFrameIndex)][0];
 
 		// restrict frame reuse
 		var forward = true,
@@ -41,8 +37,9 @@ function sequence(wave, diffs) {
 			distanceBack = 0,
 			targetIndex = nextFrameIndex;
 		while (
-			occurance[nextFrame].count > 0 &&
-			Math.abs( occurance[nextFrame].position - Number(a) ) < margin
+			(occurance[nextFrame].count > 0 &&
+			Math.abs( occurance[nextFrame].position - Number(a) ) < margin) ||
+			Math.abs(nextFrame - playhead) > maxDistance
 	  	) {
 			if (
 				forward &&
