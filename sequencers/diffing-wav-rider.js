@@ -23,6 +23,7 @@ function sequence(wave, diffs) {
 		}
 	}
 
+	// to do: add playhead option for sequencial frames below threshold
 	for (a in wave) {
 		let amplitude = parseFloat(wave[a]),
 			currentDiffsSorted = sortDiffs(diffs[frame]),
@@ -70,6 +71,7 @@ function sequence(wave, diffs) {
 	seq.export(sequence);
 }
 
+// to do: place inside compare-frames module
 function sortDiffs(o) {
 	var sorted = [];
 
