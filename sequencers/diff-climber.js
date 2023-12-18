@@ -14,9 +14,8 @@ function sequence(diffs) {
 		distanceLimit = seq.args['limit'] || 1; // between 0 and 1
 
 	for (i = 0; i < sequenceLength; i++) {
-		let distance = Math.floor( frameCount * (i / sequenceLength) * distanceLimit );
-		console.log(distance);
-		nextFrame = diffs[previousFrame][distance][0];
+		let distance = Math.floor( frameCount * (i / sequenceLength) * distanceLimit ),
+			nextFrame = diffs[previousFrame][distance][0];
 		sequence.push([nextFrame, 1/seq.framerate]);
 		previousFrame = nextFrame;
 	}
