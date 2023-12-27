@@ -2,7 +2,6 @@ const fs = require("mz/fs"),
       args = require('minimist')(process.argv.slice(2)),
       framerate = args['r'] ? parseFloat(args['r']) : 24,
       size = args['s'] ? parseInt(args['s']) : 240,
-      preview = args['p'],
       initialize = args['i'];
 
 exports.framerate = framerate;
@@ -50,7 +49,7 @@ exports.wave = function (a = args['a'], r = framerate) {
     return require('./components/sample-audio').wave(a, r);
 }
 
-exports.export = function (sequence, s = size, r = framerate, v = args['v'], a = args['a'], p = preview) {
+exports.export = function (sequence, s = size, r = framerate, v = args['v'], a = args['a']) {
     requireFiles([v]);
-    require('./components/export-sequence').concat(sequence, s, r, v, a, p);
+    require('./components/export-sequence').concat(sequence, s, r, v, a);
 }
