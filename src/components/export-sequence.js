@@ -2,7 +2,7 @@ const fs = require("mz/fs"),
       path = require('path'),
       { execSync } = require("child_process");
       
-exports.concat = function(seq, res, fps, vid, aud, pre) {
+exports.concat = function(seq, res, fps, vid, aud) {
     let seqStr = '';
     if (Array.isArray(seq)) {
         for (f in seq) {
@@ -18,10 +18,7 @@ exports.concat = function(seq, res, fps, vid, aud, pre) {
     if (!fs.existsSync(dir))
         fs.mkdirSync(dir);
 
-    const preview = "ffmpeg -f concat -i data/seq.txt -vf scale=-1:" + res + " -vcodec libx264 -crf 30 -pix_fmt yuv420p -r " + fps + " exports/sequitur_" + Date.now() + ".mp4",
-          full = "ffmpeg -f concat -i data/seq.txt -vf scale=-1:" + res + " -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r " + fps + " exports/sequitur_" + Date.now() + ".mov";
-
-    var encodeCmd = pre ? preview : full;
+    const encodeCmd = "ffmpeg -f concat -i data/seq.txt -vf scale=-1:" + res + " -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r " + fps + " exports/sequitur_" + Date.now() + ".mov";
 
     if (aud) encodeCmd += ' -i ' + aud.replace(' ','\\ ');
 
