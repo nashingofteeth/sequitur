@@ -6,9 +6,9 @@ exports.concat = function(seq, res, fps, vid, aud) {
     let seqStr = '',
         dir = 'exports',
         filepath = `${dir}/sequitur_${ Date.now() }.mov`,
-        encodeCmd = `ffmpeg -f concat -i data/seq.txt -vf scale=-1:${res} -c:v prores_ks -profile:v 2 -c:a pcm_s16le -r ${fps} ${filepath}`;
+        encodeCmd = `ffmpeg -f concat -i data/seq.txt -vf scale=-1:${res} -c:v prores_ks -profile:v 3 -pix_fmt yuv422p10le -qscale:v 11 -vendor apl0 -r ${fps} ${filepath}`;
 
-    if (aud) encodeCmd += ' -i ' + aud.replace(' ','\\ ');
+    if (aud) encodeCmd += ' -c:a pcm_s16le -i ' + aud.replace(' ','\\ ');
 
     if (Array.isArray(seq)) {
         for (f in seq) {
