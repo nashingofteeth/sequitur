@@ -23,6 +23,6 @@ exports.concat = (seq, res, fps, vid, aud) => {
   execSync(encodeCmd);
   console.log("exported");
 
-  console.log("playing...");
-  execSync(`ffplay ${filepath}`);
+  // console.log("playing...");
+  // execSync(`ffplay ${filepath}`);
 };
