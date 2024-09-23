@@ -1,8 +1,8 @@
-const fs = require("mz/fs"),
-  path = require("path"),
-  { execSync } = require("child_process");
+const fs = require("mz/fs");
+const path = require("node:path");
+const { execSync } = require("node:child_process");
 
-exports.frames = function (file, resolution) {
+exports.frames = (file, resolution) => {
   let frameCount = countFrames(file);
 
   if (!frameCount) {
@@ -14,29 +14,22 @@ exports.frames = function (file, resolution) {
 };
 
 function countFrames(file) {
-  const dir = "data/frames_" + path.basename(file) + "/";
+  const dir = `data/frames_${path.basename(file)}/`;
   if (fs.existsSync(dir)) {
-    files = fs.readdirSync(dir);
+    const files = fs.readdirSync(dir);
     if (files.length < 2) return false;
-    else {
-      const frames = files.filter((el) => path.extname(el) === ".bmp");
-      return frames.length;
-    }
-  } else return false;
+    const frames = files.filter((el) => path.extname(el) === ".bmp");
+    return frames.length;
+  }
+  return false;
 }
 
 function extractFrames(file, res) {
-  const dir = "data/frames_" + path.basename(file) + "/";
+  const dir = `data/frames_${path.basename(file)}/`;
   if (!fs.existsSync(dir)) fs.mkdirSync(dir);
 
   console.log("extracting frames...");
   execSync(
-    "ffmpeg -i " +
-      file.replace(" ", "\\ ") +
-      " -vf scale=-1:" +
-      res +
-      " data/frames_" +
-      path.basename(file) +
-      "/%d.bmp -y",
+    `ffmpeg -i ${file.replace(" ", "\\ ")} -vf scale=-1:${res} data/frames_${path.basename(file)}/%d.bmp -y`,
   );
 }
