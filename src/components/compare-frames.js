@@ -1,9 +1,9 @@
-const fs = require("mz/fs"),
-  path = require("path"),
-  compareImages = require("resemblejs/compareImages");
+const fs = require("mz/fs");
+const path = require("node:path");
+const compareImages = require("resemblejs/compareImages");
 
 async function diffs(file, frameCount, sort = false) {
-  const outputFile = "data/diffs_" + path.basename(file) + ".json";
+  const outputFile = `data/diffs_${path.basename(file)}.json`;
   let diffs = null;
 
   if (fs.existsSync(outputFile))
@@ -19,9 +19,9 @@ async function diffs(file, frameCount, sort = false) {
 }
 
 async function compareFrames(file, frameCount) {
-  let diffs = {},
-    timecode = [],
-    threshold = 100;
+  const diffs = {};
+  const timecode = [];
+  let threshold = 100;
 
   for (a = 1; a <= frameCount; a++) {
     timecode.push(Date.now());
@@ -30,29 +30,23 @@ async function compareFrames(file, frameCount) {
     diffsPerSec = frameCount / (processingTime / 1000);
     diffsLeft = (frameCount - a) * frameCount;
     secsLeft = Math.round(diffsLeft / diffsPerSec);
-    timeLeft = secsLeft > 60 ? Math.round(secsLeft / 60) + "m" : secsLeft + "s";
+    timeLeft = secsLeft > 60 ? `${Math.round(secsLeft / 60)}m` : `${secsLeft}s`;
     progress = Math.round((a / frameCount) * 100);
 
     message =
       a < 2 || a > frameCount - 1
         ? "comparing frames..."
-        : "comparing frames - " +
-          progress +
-          "%, " +
-          timeLeft +
-          " left @ " +
-          Math.round(diffsPerSec) +
-          "/s";
+        : `comparing frames - ${progress}%, ${timeLeft} left @ ${Math.round(diffsPerSec)}/s`;
     console.log(message);
 
     diffs[a] = {};
     max = 0;
     for (b = 1; b <= frameCount; b++) {
-      if (b == a) diff = 0;
-      else if (b == a - 1) diff = diffs[a - 1][b + 1];
+      if (b === a) diff = 0;
+      else if (b === a - 1) diff = diffs[a - 1][b + 1];
       else diff = await getDiff(file, a, b, threshold);
 
-      diffs[a][b] = parseFloat(diff);
+      diffs[a][b] = Number.parseFloat(diff);
       max = diff > max ? diff : max;
     }
 
@@ -69,24 +63,22 @@ async function getDiff(f, a, b, t) {
   };
 
   const data = await compareImages(
-    await fs.readFile("data/frames_" + path.basename(f) + "/" + a + ".bmp"),
-    await fs.readFile("data/frames_" + path.basename(f) + "/" + b + ".bmp"),
+    await fs.readFile(`data/frames_${path.basename(f)}/${a}.bmp`),
+    await fs.readFile(`data/frames_${path.basename(f)}/${b}.bmp`),
     options,
   );
 
-  return parseFloat(data.misMatchPercentage);
+  return Number.parseFloat(data.misMatchPercentage);
 }
 
 function sortedDiffs(o) {
-  var sortedDiffs = {};
+  const sortedDiffs = {};
   for (f in o) {
-    var sorted = [];
+    const sorted = [];
 
     for (d in o[f]) sorted.push([d, o[f][d]]);
 
-    sorted.sort(function (a, b) {
-      return a[1] - b[1];
-    });
+    sorted.sort((a, b) => a[1] - b[1]);
 
     sortedDiffs[f] = sorted;
   }
