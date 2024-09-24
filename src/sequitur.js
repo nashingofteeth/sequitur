@@ -49,7 +49,8 @@ exports.export = (
   r = framerate,
   v = args.v,
   a = args.a,
+  o = args.o,
 ) => {
   requireFiles([v]);
-  require("./components/export-sequence").concat(sequence, s, r, v, a);
+  require("./components/export-sequence").concat(sequence, s, r, v, a, o);
 };

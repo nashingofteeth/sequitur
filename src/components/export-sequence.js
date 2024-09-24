@@ -2,10 +2,11 @@ const fs = require("mz/fs");
 const path = require("node:path");
 const { execSync } = require("node:child_process");
 
-exports.concat = (seq, res, fps, vid, aud) => {
+exports.concat = (seq, res, fps, vid, aud, out) => {
   let seqStr = "";
   const dir = "exports";
-  const filepath = `${dir}/sequitur_${Date.now()}.mov`;
+  const filename = out || `sequitur_${Date.now()}`;
+  const filepath = `${dir}/${filename}.mov`;
   let encodeCmd = `ffmpeg -f concat -i data/seq.txt -vf scale=-1:${res} -c:v prores_ks -profile:v 3 -pix_fmt yuv422p10le -qscale:v 11 -vendor apl0 -r ${fps} ${filepath}`;
 
   if (aud) encodeCmd += ` -c:a pcm_s16le -i ${aud.replace(" ", "\\ ")}`;
