@@ -1,62 +1,60 @@
 const seq = require("../src/sequitur");
 
 (async () => {
-  const wave = seq.wave(),
-    diffs = await seq.diffs(undefined, undefined, true);
+  const wave = seq.wave();
+  const diffs = await seq.diffs(undefined, undefined, true);
 
   sequence(wave, diffs);
 })();
 
 function sequence(wave, diffs) {
-  var sequence = [],
-    frameCount = Object.keys(diffs).length,
-    currentFrame = "1",
-    nextFrame = currentFrame,
-    occurance = [],
-    diffLimit = seq.args["limit"] || 1, // set between 0 and 1
-    margin = seq.args["margin"] || 1; // set between 1 and frameCount
+  const sequence = [];
+  const frameCount = Object.keys(diffs).length;
+  let currentFrame = "1";
+  const occurrence = [];
+  const diffLimit = seq.args.limit || 1; // set between 0 and 1
+  const margin = seq.args.margin || 1; // set between 1 and frameCount
 
-  for (f in diffs) {
-    occurance[f] = {
+  for (const f in diffs) {
+    occurrence[f] = {
       count: 0,
       position: 0,
     };
   }
 
-  for (a in wave) {
-    let amplitude = parseFloat(wave[a]),
-      currentDiffs = diffs[currentFrame],
-      playhead = Math.ceil(a * (frameCount / wave.length)),
-      maxDistance = seq.args["stretch"]
-        ? margin + frameCount * amplitude
-        : frameCount,
-      nextFrameIndex = Math.floor((frameCount - 1) * (amplitude * diffLimit)), // use amplitude as diffs index
-      nextFrame = currentDiffs[String(nextFrameIndex)][0];
+  for (const a in wave) {
+    const amplitude = Number.parseFloat(wave[a]);
+    const currentDiffs = diffs[currentFrame];
+    const playhead = Math.ceil(a * (frameCount / wave.length));
+    const maxDistance = seq.args.stretch
+      ? margin + frameCount * amplitude
+      : frameCount;
+    let nextFrameIndex = Math.floor((frameCount - 1) * (amplitude * diffLimit)); // use amplitude as diffs index
+    let nextFrame = currentDiffs[String(nextFrameIndex)][0];
 
-    // restrict frame reuse
-    var forward = true,
-      distanceFoward = 0,
-      distanceBack = 0,
-      targetIndex = nextFrameIndex;
+    let forward = true;
+    let distanceForward = 0;
+    let distanceBack = 0;
+    const targetIndex = nextFrameIndex;
+
     while (
-      (occurance[nextFrame].count > 0 &&
-        Math.abs(occurance[nextFrame].position - Number(a)) < margin) ||
+      (occurrence[nextFrame].count > 0 &&
+        Math.abs(occurrence[nextFrame].position - Number(a)) < margin) ||
       Math.abs(nextFrame - playhead) > maxDistance
     ) {
-      if (forward && targetIndex + distanceFoward + 1 < frameCount - 1) {
-        nextFrameIndex = targetIndex + ++distanceFoward;
+      if (forward && targetIndex + distanceForward + 1 < frameCount - 1) {
+        nextFrameIndex = targetIndex + ++distanceForward;
       } else if (targetIndex - distanceBack + 1 > 0) {
         nextFrameIndex = targetIndex - ++distanceBack;
       }
 
-      foward = forward ? false : true;
+      forward = !forward;
 
       nextFrame = currentDiffs[String(nextFrameIndex)][0];
     }
 
-    // record occurence
-    occurance[nextFrame].count++;
-    occurance[nextFrame].position = Number(a);
+    occurrence[nextFrame].count++;
+    occurrence[nextFrame].position = Number(a);
 
     sequence.push([nextFrame, 1 / seq.framerate]);
 
