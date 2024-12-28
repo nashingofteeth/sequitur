@@ -13,7 +13,7 @@ exports.concat = (seq, res, fps, vid, aud, out) => {
 
   if (Array.isArray(seq)) {
     for (f in seq) {
-      seqStr += `file 'frames_${path.basename(vid)}/${seq[f][0]}.bmp'\nduration ${seq[f][1]}\n`;
+      seqStr += `file 'frames_${path.basename(vid)}/${seq[f][0]}.jpg'\nduration ${seq[f][1]}\n`;
     }
   } else seqStr = seq;
   fs.writeFileSync("data/seq.txt", seqStr);

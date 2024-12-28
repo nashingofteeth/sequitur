@@ -29,7 +29,7 @@ for (i = 1; i <= sequenceLength; i++) {
       videos[v].name +
       "/" +
       frame +
-      ".bmp'\n" +
+      ".jpg'\n" +
       "duration " +
       duration +
       "\n";
