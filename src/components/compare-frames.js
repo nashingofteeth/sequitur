@@ -1,5 +1,5 @@
-const fs = require("mz/fs");
-const path = require("node:path");
+const fs = require('mz/fs');
+const path = require('node:path');
 const sharp = require('sharp');
 const { Worker, isMainThread, parentPort, workerData } = require('node:worker_threads');
 const os = require('node:os');
@@ -44,9 +44,10 @@ async function compareFrames(file, frameCount) {
 
     // Use worker threads for parallel processing
     const workers = [];
-    const chunkSize = Math.ceil(frameCount / os.cpus().length);
+    const numOfCPUs = os.cpus().length;
+    const chunkSize = Math.ceil(frameCount / numOfCPUs);
 
-    for (let i = 0; i < os.cpus().length; i++) {
+    for (let i = 0; i < numOfCPUs; i++) {
       const start = i * chunkSize + 1;
       const end = Math.min((i + 1) * chunkSize, frameCount);
 
@@ -148,11 +149,11 @@ async function getDiff(f, a, b) {
     // Apply a non-linear scaling to spread out the values
     // You can adjust these parameters to fine-tune the sensitivity
     const sensitivity = 2.5; // Increase for more sensitivity to small changes
-    const scaledDiff = Math.pow(avgDiff, 1/sensitivity);
+    const scaledDiff = avgDiff ** (1 / sensitivity);
 
     return Number.parseFloat(scaledDiff.toFixed(2));
   } catch (error) {
-    console.error(`Error processing images:`, error);
+    console.error('Error processing images:', error);
     throw error;
   }
 }
