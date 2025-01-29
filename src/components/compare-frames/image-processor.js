@@ -1,16 +1,16 @@
 const path = require('node:path');
 const sharp = require('sharp');
 
-async function getDiff(f, a, b) {
+async function getDiff(file, frameA, frameB) {
   try {
-    const [img1, img2] = await Promise.all([
-      loadImage(f, a),
-      loadImage(f, b)
+    const [imgA, imgB] = await Promise.all([
+      loadImage(file, frameA),
+      loadImage(file, frameB)
     ]);
 
-    validateImages(img1, img2);
+    validateImages(imgA, imgB);
 
-    return calculateDifference(img1, img2);
+    return calculateDifference(imgA, imgB);
   } catch (error) {
     console.error('Error processing images:', error);
     throw error;
@@ -23,20 +23,20 @@ async function loadImage(file, frame) {
     .toBuffer({ resolveWithObject: true });
 }
 
-function validateImages(img1, img2) {
-  if (img1.info.width !== img2.info.width || img1.info.height !== img2.info.height) {
+function validateImages(imgA, imgB) {
+  if (imgA.info.width !== imgB.info.width || imgA.info.height !== imgB.info.height) {
     throw new Error('Images have different dimensions');
   }
 }
 
-function calculateDifference(img1, img2) {
-  const totalPixels = img1.info.width * img1.info.height;
+function calculateDifference(imgA, imgB) {
+  const totalPixels = imgA.info.width * imgA.info.height;
   let diffSum = 0;
 
-  for (let i = 0; i < img1.data.length; i += 4) {
-    const diffR = Math.abs(img1.data[i] - img2.data[i]);
-    const diffG = Math.abs(img1.data[i + 1] - img2.data[i + 1]);
-    const diffB = Math.abs(img1.data[i + 2] - img2.data[i + 2]);
+  for (let i = 0; i < imgA.data.length; i += 4) {
+    const diffR = Math.abs(imgA.data[i] - imgB.data[i]);
+    const diffG = Math.abs(imgA.data[i + 1] - imgB.data[i + 1]);
+    const diffB = Math.abs(imgA.data[i + 2] - imgB.data[i + 2]);
 
     const pixelDiff = (diffR + diffG + diffB) / (255 * 3);
     diffSum += pixelDiff;

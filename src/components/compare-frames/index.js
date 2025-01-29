@@ -14,12 +14,12 @@ async function compareFrames(file, frameCount) {
   const timecode = [];
   let threshold = 100;
 
-  for (let a = 1; a <= frameCount; a++) {
+  for (let frameA = 1; frameA <= frameCount; frameA++) {
     timecode.push(Date.now());
     const processingTime = timecode[timecode.length - 1] - timecode[timecode.length - 2];
-    console.log(createProgressMessage(a, frameCount, processingTime));
+    console.log(createProgressMessage(frameA, frameCount, processingTime));
 
-    diffs[a] = {};
+    diffs[frameA] = {};
     let max = 0;
 
     const workers = [];
@@ -32,14 +32,14 @@ async function compareFrames(file, frameCount) {
 
       if (start > frameCount) break;
 
-      workers.push(createWorker(file, a, start, end, threshold));
+      workers.push(createWorker(file, frameA, start, end, threshold));
     }
 
     const results = await Promise.all(workers);
 
     for (const result of results) {
-      for (const [frame, diff] of Object.entries(result)) {
-        diffs[a][frame] = diff;
+      for (const [frameB, diff] of Object.entries(result)) {
+        diffs[frameA][frameB] = diff;
         max = diff > max ? diff : max;
       }
     }
@@ -51,10 +51,10 @@ async function compareFrames(file, frameCount) {
   return diffs;
 }
 
-function createWorker(file, currentFrame, start, end, threshold) {
+function createWorker(file, frameA, start, end, threshold) {
   return new Promise((resolve, reject) => {
     const worker = new Worker(path.join(__dirname, 'worker.js'), {
-      workerData: { file, currentFrame, start, end, threshold }
+      workerData: { file, frameA, start, end, threshold }
     });
     worker.on('message', resolve);
     worker.on('error', reject);

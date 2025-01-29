@@ -2,23 +2,23 @@ const { isMainThread, parentPort, workerData } = require('node:worker_threads');
 const { getDiff } = require('./image-processor');
 
 if (!isMainThread) {
-  const { file, currentFrame, start, end } = workerData;
+  const { file, frameA, start, end } = workerData;
 
   async function compareFrameChunk() {
     const results = {};
 
-    for (let b = start; b <= end; b++) {
-      if (b === currentFrame) {
-        results[b] = 0;
+    for (let frameB = start; frameB <= end; frameB++) {
+      if (frameB === frameA) {
+        results[frameB] = 0;
         continue;
       }
 
       try {
-        const diff = await getDiff(file, currentFrame, b);
-        results[b] = diff;
+        const diff = await getDiff(file, frameA, frameB);
+        results[frameB] = diff;
       } catch (error) {
-        console.error(`Error comparing frames ${currentFrame} and ${b}:`, error);
-        results[b] = 0;
+        console.error(`Error comparing frames ${frameA} and ${frameB}:`, error);
+        results[frameB] = 0;
       }
     }
 
