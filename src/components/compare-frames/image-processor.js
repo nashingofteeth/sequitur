@@ -43,10 +43,8 @@ function calculateDifference(imgA, imgB) {
   }
 
   const avgDiff = (diffSum / totalPixels) * 100;
-  const sensitivity = 2.5;
-  const scaledDiff = avgDiff ** (1 / sensitivity);
 
-  return Number.parseFloat(scaledDiff.toFixed(2));
+  return Number.parseFloat(avgDiff.toFixed(2));
 }
 
 exports.getDiff = getDiff;
