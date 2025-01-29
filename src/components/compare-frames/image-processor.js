@@ -33,7 +33,7 @@ function calculateDifference(imgA, imgB) {
   const totalPixels = imgA.info.width * imgA.info.height;
   let diffSum = 0;
 
-  for (let i = 0; i < imgA.data.length; i += 4) {
+  for (let i = 0; i < imgA.data.length; i += 3) {
     const diffR = Math.abs(imgA.data[i] - imgB.data[i]);
     const diffG = Math.abs(imgA.data[i + 1] - imgB.data[i + 1]);
     const diffB = Math.abs(imgA.data[i + 2] - imgB.data[i + 2]);
