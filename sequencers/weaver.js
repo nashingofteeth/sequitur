@@ -32,7 +32,7 @@ for (i = 1; i <= videos[longest].frames; i++) {
       videos[v].name +
       "/" +
       frame +
-      ".jpg'\n" +
+      ".png'\n" +
       "duration " +
       duration +
       "\n";

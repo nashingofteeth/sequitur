@@ -38,7 +38,7 @@ for (f in sequenceArr)
     sequenceArr[f][1] +
     "/" +
     sequenceArr[f][2] +
-    ".jpg'\n" +
+    ".png'\n" +
     "duration " +
     duration +
     "\n";

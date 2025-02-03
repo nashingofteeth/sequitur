@@ -17,7 +17,7 @@ exports.concat = (sequence, fps, videoFile, audioFile, outFileName, preview, noa
   let seqStr = "";
   if (Array.isArray(sequence)) {
     for (f in sequence) {
-      seqStr += `file 'frames_${path.basename(videoFile)}/${sequence[f][0]}.jpg'\nduration ${sequence[f][1]}\n`;
+      seqStr += `file 'frames_${path.basename(videoFile)}/${sequence[f][0]}.png'\nduration ${sequence[f][1]}\n`;
     }
   } else seqStr = sequence;
   fs.writeFileSync("cache/seq.txt", seqStr);
