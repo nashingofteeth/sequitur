@@ -8,7 +8,7 @@ exports.framerate = framerate;
 exports.args = args;
 
 // make or remove data folder
-const dir = "data";
+const dir = "cache";
 if (initialize && fs.existsSync(dir))
   fs.rmSync(dir, { recursive: true, force: true });
 if (!fs.existsSync(dir)) fs.mkdirSync(dir);

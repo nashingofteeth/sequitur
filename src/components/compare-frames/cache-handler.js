@@ -3,7 +3,7 @@ const path = require('node:path');
 
 async function readCache(file) {
   const outputFile = getCachePath(file);
-  
+
   if (await fs.exists(outputFile)) {
     const data = await fs.readFile(outputFile);
     return JSON.parse(data);
@@ -17,7 +17,7 @@ async function writeCache(file, data) {
 }
 
 function getCachePath(file) {
-  return `data/diffs_${path.basename(file)}.json`;
+  return `cache/diffs_${path.basename(file)}.json`;
 }
 
 exports.readCache = readCache;

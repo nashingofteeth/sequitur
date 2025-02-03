@@ -14,7 +14,7 @@ exports.frames = (file, resolution) => {
 };
 
 function countFrames(file) {
-  const dir = `data/frames_${path.basename(file)}/`;
+  const dir = `cache/frames_${path.basename(file)}/`;
   if (fs.existsSync(dir)) {
     const files = fs.readdirSync(dir);
     if (files.length < 2) return false;
@@ -25,11 +25,11 @@ function countFrames(file) {
 }
 
 function extractFrames(file, res) {
-  const dir = `data/frames_${path.basename(file)}/`;
+  const dir = `cache/frames_${path.basename(file)}/`;
   if (!fs.existsSync(dir)) fs.mkdirSync(dir);
 
   console.log("extracting frames...");
   execSync(
-    `ffmpeg -i ${file.replace(" ", "\\ ")} -vf scale=-1:${res} -qscale:v 2 data/frames_${path.basename(file)}/%d.jpg -y`,
+    `ffmpeg -i ${file.replace(" ", "\\ ")} -vf scale=-1:${res} -qscale:v 2 cache/frames_${path.basename(file)}/%d.jpg -y`,
   );
 }

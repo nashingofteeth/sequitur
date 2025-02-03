@@ -18,7 +18,7 @@ async function getDiff(file, frameA, frameB) {
 }
 
 async function loadImage(file, frame) {
-  return sharp(`data/frames_${path.basename(file)}/${frame}.jpg`)
+  return sharp(`cache/frames_${path.basename(file)}/${frame}.jpg`)
     .raw()
     .toBuffer({ resolveWithObject: true });
 }
