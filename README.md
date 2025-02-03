@@ -1,5 +1,5 @@
 # SEQUITUR
-frame-by-frame video sequencer. requires FFMPEG.
+frame-by-frame video sequencer.
 ## dependencies
 - [FFMPEG](https://ffmpeg.org/)
 - [sharp](https://sharp.pixelplumbing.com/)
