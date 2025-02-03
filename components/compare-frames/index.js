@@ -2,7 +2,7 @@ const { readCache, writeCache } = require('./cache-handler');
 const { createProgressMessage } = require('./utils');
 const { getDiff } = require('./image-processor');
 
-async function diffs(file, frameCount, sort = false) {
+async function diffs(file, frameCount, sort = true) {
   const diffs = await readCache(file) || await compareFrames(file, frameCount);
   return sort ? sortedDiffs(diffs) : diffs;
 }
