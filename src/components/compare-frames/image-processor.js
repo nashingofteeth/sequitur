@@ -17,10 +17,19 @@ async function getDiff(file, frameA, frameB) {
   }
 }
 
+const imageCache = new Map();
 async function loadImage(file, frame) {
-  return sharp(`cache/frames_${path.basename(file)}/${frame}.jpg`)
+  const key = `${file}_${frame}`;
+  if (imageCache.has(key)) {
+    return imageCache.get(key);
+  }
+
+  const image = await sharp(`cache/frames_${path.basename(file)}/${frame}.jpg`)
     .raw()
     .toBuffer({ resolveWithObject: true });
+
+  imageCache.set(key, image);
+  return image;
 }
 
 function validateImages(imgA, imgB) {
