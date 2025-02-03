@@ -1,4 +1,4 @@
-const seq = require("../src/sequitur"),
+const seq = require(".."),
   path = require("path");
 
 var videoFiles = seq.args["v"],
@@ -38,7 +38,7 @@ for (f in sequenceArr)
     sequenceArr[f][1] +
     "/" +
     sequenceArr[f][2] +
-    ".bmp'\n" +
+    ".png'\n" +
     "duration " +
     duration +
     "\n";

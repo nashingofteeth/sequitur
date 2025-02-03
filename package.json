@@ -3,12 +3,12 @@
   "version": "5.1.2",
   "description": "video sequencer",
   "private": true,
-  "main": "src/sequitur.js",
+  "main": "index.js",
   "dependencies": {
     "fs": "^0.0.1-security",
     "minimist": "^1.2.8",
     "mz": "^2.7.0",
     "node-wav": "^0.0.2",
-    "resemblejs": "^5.0.0"
+    "sharp": "^0.33.5"
   }
 }

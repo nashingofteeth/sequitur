@@ -1,24 +1,23 @@
-const seq = require("../src/sequitur");
+const seq = require("..");
 
 (async () => {
-  const diffs = await seq.diffs(undefined, undefined, true);
+  const diffs = await seq.diffs();
 
   sequence(diffs);
 })();
 
 function sequence(diffs) {
-  var sequence = [],
-    used = [],
-    frameCount = Object.keys(diffs).length,
-    firstFrame = "6";
-  sequence = [[firstFrame, 1 / seq.framerate]];
+  const used = [];
+  const frameCount = Object.keys(diffs).length;
+  const firstFrame = Math.floor(Math.random() * frameCount) + 1;
+  const sequence = [[firstFrame, 1 / seq.framerate]];
 
   for (f in diffs) used[f] = false;
   used[firstFrame] = true;
 
   for (i = 1; i < frameCount; i++) {
-    let key = 1,
-      frame = diffs[sequence[i - 1][0]][key][0];
+    let key = 1;
+    let frame = diffs[sequence[i - 1][0]][key][0];
 
     while (used[frame]) {
       frame = diffs[sequence[i - 1][0]][key][0];
@@ -27,7 +26,8 @@ function sequence(diffs) {
 
     sequence.push([frame, 1 / seq.framerate]);
     used[frame] = true;
-    console.log(frame);
+    console.log("frame:", frame);
+    console.log("diff:", diffs[sequence[i - 1][0]][key][1])
   }
 
   seq.export(sequence);

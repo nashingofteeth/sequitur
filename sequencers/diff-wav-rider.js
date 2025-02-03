@@ -1,8 +1,8 @@
-const seq = require("../src/sequitur");
+const seq = require("..");
 
 (async () => {
   const wave = seq.wave();
-  const diffs = await seq.diffs(undefined, undefined, true);
+  const diffs = await seq.diffs();
 
   sequence(wave, diffs);
 })();

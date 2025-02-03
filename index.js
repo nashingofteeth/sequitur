@@ -1,14 +1,13 @@
 const fs = require("mz/fs");
 const args = require("minimist")(process.argv.slice(2));
 const framerate = args.r ? Number.parseFloat(args.r) : 24;
-const size = args.s ? Number.parseInt(args.s) : 240;
 const initialize = args.i;
 
 exports.framerate = framerate;
 exports.args = args;
 
 // make or remove data folder
-const dir = "data";
+const dir = "cache";
 if (initialize && fs.existsSync(dir))
   fs.rmSync(dir, { recursive: true, force: true });
 if (!fs.existsSync(dir)) fs.mkdirSync(dir);
@@ -29,13 +28,13 @@ function requireFiles(args) {
 }
 
 // data functions
-exports.frameCount = (v = args.v, s = size) => {
+exports.frameCount = (v = args.v) => {
   requireFiles([v]);
-  return require("./components/extract-frames").frames(v, s);
+  return require("./components/extract-frames").frames(v);
 };
-exports.diffs = (v = args.v, s = size, sorted = true) => {
+exports.diffs = (v = args.v, sorted = true) => {
   requireFiles([v]);
-  const frameCount = require("./components/extract-frames").frames(v, s);
+  const frameCount = require("./components/extract-frames").frames(v);
   return require("./components/compare-frames").diffs(v, frameCount, sorted);
 };
 exports.wave = (a = args.a, r = framerate) => {
@@ -45,12 +44,13 @@ exports.wave = (a = args.a, r = framerate) => {
 
 exports.export = (
   sequence,
-  s = size,
   r = framerate,
   v = args.v,
   a = args.a,
   o = args.o,
+  p = args.p,
+  n = args.noaudio,
 ) => {
   requireFiles([v]);
-  require("./components/export-sequence").concat(sequence, s, r, v, a, o);
+  require("./components/export-sequence").concat(sequence, r, v, a, o, p, n);
 };

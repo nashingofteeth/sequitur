@@ -1,10 +1,15 @@
 # SEQUITUR
 frame-by-frame video sequencer. requires FFMPEG.
-
+## dependencies
+- [FFMPEG](https://ffmpeg.org/)
+- [sharp](https://sharp.pixelplumbing.com/)
+- [node-wav](https://github.com/andreasgal/node-wav)
+- [minimist](https://github.com/minimistjs/minimist)
 ## arguments
 - `-v` video file (.mov recommended)
 - `-a` audio file (.wav required)
 - `-r` frames per second (24fps default)
-- `-s` export height (240p default, input ratio maintained)
-- `-p` preview switch: exports lossy file, increasing encoding speed
-- `-i` initialize: reload data
+- `-o` set output file name
+- `-p` export lossy preview file
+- `-i` clear cache
+- `--no-audio` export video without audio
