@@ -1,4 +1,3 @@
-const path = require('node:path');
 const { readCache, writeCache } = require('./cache-handler');
 const { createProgressMessage } = require('./utils');
 const { getDiff } = require('./image-processor');
