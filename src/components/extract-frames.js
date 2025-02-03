@@ -2,11 +2,11 @@ const fs = require("mz/fs");
 const path = require("node:path");
 const { execSync } = require("node:child_process");
 
-exports.frames = (file, resolution) => {
+exports.frames = (file) => {
   let frameCount = countFrames(file);
 
   if (!frameCount) {
-    extractFrames(file, resolution);
+    extractFrames(file);
     frameCount = countFrames(file);
   }
 
@@ -24,12 +24,12 @@ function countFrames(file) {
   return false;
 }
 
-function extractFrames(file, res) {
+function extractFrames(file) {
   const dir = `cache/frames_${path.basename(file)}/`;
   if (!fs.existsSync(dir)) fs.mkdirSync(dir);
 
   console.log("extracting frames...");
   execSync(
-    `ffmpeg -i ${file.replace(" ", "\\ ")} -vf scale=-1:${res} -qscale:v 2 cache/frames_${path.basename(file)}/%d.jpg -y`,
+    `ffmpeg -i ${file.replace(" ", "\\ ")} -qscale:v 2 cache/frames_${path.basename(file)}/%d.jpg -y`,
   );
 }

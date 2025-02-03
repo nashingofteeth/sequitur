@@ -25,6 +25,7 @@ async function loadImage(file, frame) {
   }
 
   const image = await sharp(`cache/frames_${path.basename(file)}/${frame}.jpg`)
+    .resize({ height: 240 })
     .raw()
     .toBuffer({ resolveWithObject: true });
 

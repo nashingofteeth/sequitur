@@ -1,21 +1,23 @@
 const fs = require("mz/fs");
 const path = require("node:path");
 const { execSync } = require("node:child_process");
-const seq = require("../sequitur");
 
-exports.concat = (sequence, res, fps, vid, aud, out) => {
-  let seqStr = "";
+exports.concat = (sequence, fps, videoFile, audioFile, outFileName, preview, noaudio) => {
+  let encodeCmd = `ffmpeg -f concat -i cache/seq.txt -c:v prores_ks -profile:v 3 -pix_fmt yuv422p10le -qscale:v 11 -vendor apl0 -r ${fps}`;
+
+  if (preview) encodeCmd += " -vf scale=-1:240";
+
   const dir = "exports";
-  const filename = out || `sequitur_${Date.now()}`;
+  const filename = outFileName || `sequitur_${Date.now()}`;
   const filepath = `${dir}/${filename}.mov`;
-  let encodeCmd = `ffmpeg -f concat -i cache/seq.txt -vf scale=-1:${res} -c:v prores_ks -profile:v 3 -pix_fmt yuv422p10le -qscale:v 11 -vendor apl0 -r ${fps} ${filepath}`;
+  encodeCmd += ` ${filepath} -y`;
 
-  const useAud = !seq.args?.noaudio ?? true;
-  if (aud && useAud) encodeCmd += ` -c:a pcm_s16le -i ${aud.replace(" ", "\\ ")}`;
+  if (audioFile && !noaudio) encodeCmd += ` -c:a pcm_s16le -i ${audioFile.replace(" ", "\\ ")}`;
 
+  let seqStr = "";
   if (Array.isArray(sequence)) {
     for (f in sequence) {
-      seqStr += `file 'frames_${path.basename(vid)}/${sequence[f][0]}.jpg'\nduration ${sequence[f][1]}\n`;
+      seqStr += `file 'frames_${path.basename(videoFile)}/${sequence[f][0]}.jpg'\nduration ${sequence[f][1]}\n`;
     }
   } else seqStr = sequence;
   fs.writeFileSync("cache/seq.txt", seqStr);
