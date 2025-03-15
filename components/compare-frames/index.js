@@ -11,38 +11,37 @@ async function compareFrames(file, frameCount) {
   const diffs = {};
   const timecode = [];
 
+  for (let frame = 1; frame <= frameCount; frame++) {
+    diffs[frame] = {};
+    // Every frame has zero difference with itself
+    diffs[frame][frame] = 0;
+  }
+
   for (let frameA = 1; frameA <= frameCount; frameA++) {
     timecode.push(Date.now());
     const processingTime = timecode[timecode.length - 1] - timecode[timecode.length - 2];
     console.log(createProgressMessage(frameA, frameCount, processingTime));
 
-    diffs[frameA] = {};
-
-    // Create array of promises for all frame comparisons
     const comparePromises = [];
 
-    for (let frameB = 1; frameB <= frameCount; frameB++) {
-      if (frameB === frameA) {
-        diffs[frameA][frameB] = 0;
-        continue;
-      }
-
+    // Only compare with frames that haven't been compared yet
+    // This means only comparing frameA with frameB where frameB > frameA
+    for (let frameB = frameA + 1; frameB <= frameCount; frameB++) {
       comparePromises.push(
         getDiff(file, frameA, frameB)
-          .then(diff => ({ frameB, diff }))
+          .then(diff => ({ frameA, frameB, diff }))
           .catch(error => {
             console.error(`Error comparing frames ${frameA} and ${frameB}:`, error);
-            return { frameB, diff: 0 };
+            return { frameA, frameB, diff: 0 };
           })
       );
     }
 
-    // Wait for all comparisons to complete
     const results = await Promise.all(comparePromises);
 
-    // Process results
-    for (const { frameB, diff } of results) {
+    for (const { frameA, frameB, diff } of results) {
       diffs[frameA][frameB] = diff;
+      diffs[frameB][frameA] = diff; // Store the same value for the reverse comparison
     }
   }
 
