@@ -1,6 +1,6 @@
 {
   "name": "sequitur",
-  "version": "5.1.2",
+  "version": "6.1.0",
   "description": "video sequencer",
   "private": true,
   "main": "index.js",
