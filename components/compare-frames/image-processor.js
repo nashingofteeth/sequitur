@@ -42,19 +42,34 @@ function validateImages(imgA, imgB) {
 function calculateDifference(imgA, imgB) {
   const totalPixels = imgA.info.width * imgA.info.height;
   let diffSum = 0;
+  let diffSumR = 0, diffSumG = 0, diffSumB = 0;
 
   for (let i = 0; i < imgA.data.length; i += 3) {
     const diffR = Math.abs(imgA.data[i] - imgB.data[i]);
     const diffG = Math.abs(imgA.data[i + 1] - imgB.data[i + 1]);
     const diffB = Math.abs(imgA.data[i + 2] - imgB.data[i + 2]);
 
+    diffSumR += diffR / 255;
+    diffSumG += diffG / 255;
+    diffSumB += diffB / 255;
+
     const pixelDiff = (diffR + diffG + diffB) / (255 * 3);
     diffSum += pixelDiff;
   }
 
-  const avgDiff = (diffSum / totalPixels) * 100;
+  const avgDiff = Number.parseFloat(((diffSum / totalPixels) * 100).toFixed(2));
+  const avgDiffR = Number.parseFloat(((diffSumR / totalPixels) * 100).toFixed(2));
+  const avgDiffG = Number.parseFloat(((diffSumG / totalPixels) * 100).toFixed(2));
+  const avgDiffB = Number.parseFloat(((diffSumB / totalPixels) * 100).toFixed(2));
 
-  return Number.parseFloat(avgDiff.toFixed(2));
+  return {
+    composite: avgDiff,
+    channels: {
+      r: avgDiffR,
+      g: avgDiffG,
+      b: avgDiffB
+    }
+  };
 }
 
 exports.getDiff = getDiff;

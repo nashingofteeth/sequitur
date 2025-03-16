@@ -2,7 +2,7 @@ const seq = require("..");
 
 (async () => {
   const wave = seq.wave();
-  const diffs = await seq.diffs();
+  const { composite: diffs } = await seq.diffs();
 
   sequence(wave, diffs);
 })();

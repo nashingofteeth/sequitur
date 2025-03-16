@@ -1,7 +1,7 @@
 const seq = require("..");
 
 (async () => {
-  const diffs = await seq.diffs();
+  const { composite: diffs } = await seq.diffs();
 
   sequence(diffs);
 })();
