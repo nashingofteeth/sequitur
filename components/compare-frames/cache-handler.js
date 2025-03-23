@@ -1,7 +1,7 @@
 const fs = require('node:fs').promises;
 const path = require('node:path');
 
-async function writeCache(file, compositeDiffs, channelDiffs = null) {
+async function writeCache(file, compositeDiffs, channelDiffs, colorDiffs) {
   const frameCount = Object.keys(compositeDiffs).length;
   const outputPath = `cache/diffs_${path.basename(file)}.bin`;
   const triangleSize = (frameCount * (frameCount - 1) / 2);
@@ -18,21 +18,31 @@ async function writeCache(file, compositeDiffs, channelDiffs = null) {
   }
   await fs.writeFile(outputPath, buffer);
 
-  if (channelDiffs) {
-    const channelBuffer = Buffer.alloc(4 + 3 * triangleSize * 4);
-    channelBuffer.writeUInt32LE(frameCount, 0);
+  const channelBuffer = Buffer.alloc(4 + 3 * triangleSize * 4);
+  channelBuffer.writeUInt32LE(frameCount, 0);
 
-    offset = 4;
-    for (let channel of ['r', 'g', 'b']) {
-      for (let i = 1; i <= frameCount; i++) {
-        for (let j = i + 1; j <= frameCount; j++) {
-          channelBuffer.writeFloatLE(channelDiffs[channel][i][j], offset);
-          offset += 4;
-        }
+  offset = 4;
+  for (let channel of ['r', 'g', 'b']) {
+    for (let i = 1; i <= frameCount; i++) {
+      for (let j = i + 1; j <= frameCount; j++) {
+        channelBuffer.writeFloatLE(channelDiffs[channel][i][j], offset);
+        offset += 4;
       }
     }
-    await fs.writeFile(`cache/diffs_${path.basename(file)}_channels.bin`, channelBuffer);
   }
+  await fs.writeFile(`cache/diffs_${path.basename(file)}_channels.bin`, channelBuffer);
+
+  const colorBuffer = Buffer.alloc(4 + triangleSize * 4);
+  colorBuffer.writeUInt32LE(frameCount, 0);
+
+  offset = 4;
+  for (let i = 1; i <= frameCount; i++) {
+    for (let j = i + 1; j <= frameCount; j++) {
+      colorBuffer.writeFloatLE(colorDiffs[i][j], offset);
+      offset += 4;
+    }
+  }
+  await fs.writeFile(`cache/diffs_${path.basename(file)}_color.bin`, colorBuffer);
 }
 
 async function readCache(file) {
@@ -54,6 +64,8 @@ async function readCache(file) {
         offset += 4;
       }
     }
+
+    result.composite = compositeDiffs;
 
     try {
       const channelPath = `cache/diffs_${path.basename(file)}_channels.bin`;
@@ -81,10 +93,39 @@ async function readCache(file) {
         }
       }
 
-      return { composite: compositeDiffs, channels: channelDiffs };
+      result.channels = channelDiffs;
     } catch (e) {
-      return { composite: compositeDiffs };
+      // Ignore missing channel data
     }
+
+    try {
+      const colorPath = `cache/diffs_${path.basename(file)}_color.bin`;
+      const colorBuffer = await fs.readFile(colorPath);
+
+      if (colorBuffer.readUInt32LE(0) !== frameCount) {
+        throw new Error('Color change frame count mismatch');
+      }
+
+      const colorDiffs = {};
+      for (let i = 1; i <= frameCount; i++) {
+        colorDiffs[i] = { [i]: 0 };
+      }
+
+      offset = 4;
+      for (let i = 1; i <= frameCount; i++) {
+        for (let j = i + 1; j <= frameCount; j++) {
+          const diff = colorBuffer.readFloatLE(offset);
+          colorDiffs[i][j] = colorDiffs[j][i] = diff;
+          offset += 4;
+        }
+      }
+
+      result.color = colorDiffs;
+    } catch (e) {
+      // Ignore missing color change data
+    }
+
+    return result;
   } catch (e) {
     return null;
   }
