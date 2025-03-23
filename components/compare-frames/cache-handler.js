@@ -1,131 +1,109 @@
 const fs = require('node:fs').promises;
 const path = require('node:path');
 
-async function writeCache(file, compositeDiffs, channelDiffs, colorDiffs) {
-  const frameCount = Object.keys(compositeDiffs).length;
-  const outputPath = `cache/diffs_${path.basename(file)}.bin`;
+function createDiffBuffer(frameCount, diffs, channels = null) {
   const triangleSize = (frameCount * (frameCount - 1) / 2);
-
-  const buffer = Buffer.alloc(4 + triangleSize * 4);
+  const channelCount = channels ? channels.length : 1;
+  const buffer = Buffer.alloc(4 + channelCount * triangleSize * 4);
   buffer.writeUInt32LE(frameCount, 0);
 
   let offset = 4;
-  for (let i = 1; i <= frameCount; i++) {
-    for (let j = i + 1; j <= frameCount; j++) {
-      buffer.writeFloatLE(compositeDiffs[i][j], offset);
-      offset += 4;
+
+  if (channels) {
+    for (let channel of channels) {
+      for (let i = 1; i <= frameCount; i++) {
+        for (let j = i + 1; j <= frameCount; j++) {
+          buffer.writeFloatLE(diffs[channel][i][j], offset);
+          offset += 4;
+        }
+      }
     }
-  }
-  await fs.writeFile(outputPath, buffer);
-
-  const channelBuffer = Buffer.alloc(4 + 3 * triangleSize * 4);
-  channelBuffer.writeUInt32LE(frameCount, 0);
-
-  offset = 4;
-  for (let channel of ['r', 'g', 'b']) {
+  } else {
     for (let i = 1; i <= frameCount; i++) {
       for (let j = i + 1; j <= frameCount; j++) {
-        channelBuffer.writeFloatLE(channelDiffs[channel][i][j], offset);
+        buffer.writeFloatLE(diffs[i][j], offset);
         offset += 4;
       }
     }
   }
-  await fs.writeFile(`cache/diffs_${path.basename(file)}_channels.bin`, channelBuffer);
 
-  const colorBuffer = Buffer.alloc(4 + triangleSize * 4);
-  colorBuffer.writeUInt32LE(frameCount, 0);
-
-  offset = 4;
-  for (let i = 1; i <= frameCount; i++) {
-    for (let j = i + 1; j <= frameCount; j++) {
-      colorBuffer.writeFloatLE(colorDiffs[i][j], offset);
-      offset += 4;
-    }
-  }
-  await fs.writeFile(`cache/diffs_${path.basename(file)}_color.bin`, colorBuffer);
+  return buffer;
 }
 
-async function readCache(file) {
-  try {
-    const filePath = `cache/diffs_${path.basename(file)}.bin`;
-    const buffer = await fs.readFile(filePath);
-    const frameCount = buffer.readUInt32LE(0);
-    const compositeDiffs = {};
+function readDiffBuffer(buffer, channels = null) {
+  const frameCount = buffer.readUInt32LE(0);
+  let diffs;
 
+  if (channels) {
+    diffs = {};
+    for (let channel of channels) {
+      diffs[channel] = {};
+      for (let i = 1; i <= frameCount; i++) {
+        diffs[channel][i] = { [i]: 0 };
+      }
+    }
+
+    let offset = 4;
+    for (let channel of channels) {
+      for (let i = 1; i <= frameCount; i++) {
+        for (let j = i + 1; j <= frameCount; j++) {
+          const diff = buffer.readFloatLE(offset);
+          diffs[channel][i][j] = diffs[channel][j][i] = diff;
+          offset += 4;
+        }
+      }
+    }
+  } else {
+    diffs = {};
     for (let i = 1; i <= frameCount; i++) {
-      compositeDiffs[i] = { [i]: 0 };
+      diffs[i] = { [i]: 0 };
     }
 
     let offset = 4;
     for (let i = 1; i <= frameCount; i++) {
       for (let j = i + 1; j <= frameCount; j++) {
         const diff = buffer.readFloatLE(offset);
-        compositeDiffs[i][j] = compositeDiffs[j][i] = diff;
+        diffs[i][j] = diffs[j][i] = diff;
         offset += 4;
       }
     }
+  }
 
-    result.composite = compositeDiffs;
+  return diffs;
+}
 
-    try {
-      const channelPath = `cache/diffs_${path.basename(file)}_channels.bin`;
-      const channelBuffer = await fs.readFile(channelPath);
+async function writeCache(file, compositeDiffs, colorDiffs, channelDiffs) {
+  const frameCount = Object.keys(compositeDiffs).length;
+  const basePath = `cache/diffs_${path.basename(file)}`;
+  const channels = ['r', 'g', 'b'];
 
-      if (channelBuffer.readUInt32LE(0) !== frameCount) {
-        throw new Error('Channel frame count mismatch');
-      }
+  const compositeBuffer = createDiffBuffer(frameCount, compositeDiffs);
+  await fs.writeFile(`${basePath}_composite.bin`, compositeBuffer);
 
-      const channelDiffs = { r: {}, g: {}, b: {} };
-      for (let channel of ['r', 'g', 'b']) {
-        for (let i = 1; i <= frameCount; i++) {
-          channelDiffs[channel][i] = { [i]: 0 };
-        }
-      }
+  const colorBuffer = createDiffBuffer(frameCount, colorDiffs);
+  await fs.writeFile(`${basePath}_color.bin`, colorBuffer);
 
-      offset = 4;
-      for (let channel of ['r', 'g', 'b']) {
-        for (let i = 1; i <= frameCount; i++) {
-          for (let j = i + 1; j <= frameCount; j++) {
-            const diff = channelBuffer.readFloatLE(offset);
-            channelDiffs[channel][i][j] = channelDiffs[channel][j][i] = diff;
-            offset += 4;
-          }
-        }
-      }
+  const channelBuffer = createDiffBuffer(frameCount, channelDiffs, channels);
+  await fs.writeFile(`${basePath}_channels.bin`, channelBuffer);
+}
 
-      result.channels = channelDiffs;
-    } catch (e) {
-      // Ignore missing channel data
-    }
+async function readCache(file) {
+  const result = {};
+  const basePath = `cache/diffs_${path.basename(file)}`;
+  const channels = ['r', 'g', 'b'];
 
-    try {
-      const colorPath = `cache/diffs_${path.basename(file)}_color.bin`;
-      const colorBuffer = await fs.readFile(colorPath);
+  try {
+    const [compositeBuffer, colorBuffer, channelBuffer] = await Promise.all([
+      fs.readFile(`${basePath}_composite.bin`),
+      fs.readFile(`${basePath}_color.bin`),
+      fs.readFile(`${basePath}_channels.bin`)
+    ]);
 
-      if (colorBuffer.readUInt32LE(0) !== frameCount) {
-        throw new Error('Color change frame count mismatch');
-      }
-
-      const colorDiffs = {};
-      for (let i = 1; i <= frameCount; i++) {
-        colorDiffs[i] = { [i]: 0 };
-      }
-
-      offset = 4;
-      for (let i = 1; i <= frameCount; i++) {
-        for (let j = i + 1; j <= frameCount; j++) {
-          const diff = colorBuffer.readFloatLE(offset);
-          colorDiffs[i][j] = colorDiffs[j][i] = diff;
-          offset += 4;
-        }
-      }
-
-      result.color = colorDiffs;
-    } catch (e) {
-      // Ignore missing color change data
-    }
-
-    return result;
+    return {
+      composite: readDiffBuffer(compositeBuffer),
+      color: readDiffBuffer(colorBuffer),
+      channels: readDiffBuffer(channelBuffer, channels)
+    };
   } catch (e) {
     return null;
   }

@@ -75,7 +75,7 @@ async function compareFrames(file, frameCount) {
     }
   }
 
-  await writeCache(file, compositeDiffs, channelDiffs, colorDiffs);
+  await writeCache(file, compositeDiffs, colorDiffs, channelDiffs);
 
   return {
     composite: compositeDiffs,
