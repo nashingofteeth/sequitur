@@ -1,6 +1,7 @@
 const fs = require('node:fs').promises;
 const path = require('node:path');
 
+// Helper function to create buffer for difference matrices
 function createDiffBuffer(frameCount, diffs, channels = null) {
   const triangleSize = (frameCount * (frameCount - 1) / 2);
   const channelCount = channels ? channels.length : 1;
@@ -10,6 +11,7 @@ function createDiffBuffer(frameCount, diffs, channels = null) {
   let offset = 4;
 
   if (channels) {
+    // Multi-channel data (like r,g,b)
     for (let channel of channels) {
       for (let i = 1; i <= frameCount; i++) {
         for (let j = i + 1; j <= frameCount; j++) {
@@ -19,6 +21,7 @@ function createDiffBuffer(frameCount, diffs, channels = null) {
       }
     }
   } else {
+    // Single matrix data
     for (let i = 1; i <= frameCount; i++) {
       for (let j = i + 1; j <= frameCount; j++) {
         buffer.writeFloatLE(diffs[i][j], offset);
@@ -30,11 +33,13 @@ function createDiffBuffer(frameCount, diffs, channels = null) {
   return buffer;
 }
 
+// Helper function to read difference matrices from buffer
 function readDiffBuffer(buffer, channels = null) {
   const frameCount = buffer.readUInt32LE(0);
   let diffs;
 
   if (channels) {
+    // Initialize multi-channel structure
     diffs = {};
     for (let channel of channels) {
       diffs[channel] = {};
@@ -54,6 +59,7 @@ function readDiffBuffer(buffer, channels = null) {
       }
     }
   } else {
+    // Initialize single matrix structure
     diffs = {};
     for (let i = 1; i <= frameCount; i++) {
       diffs[i] = { [i]: 0 };
@@ -77,12 +83,15 @@ async function writeCache(file, compositeDiffs, colorDiffs, channelDiffs) {
   const basePath = `cache/diffs_${path.basename(file)}`;
   const channels = ['r', 'g', 'b'];
 
+  // Write composite diffs
   const compositeBuffer = createDiffBuffer(frameCount, compositeDiffs);
   await fs.writeFile(`${basePath}_composite.bin`, compositeBuffer);
 
+  // Write color diffs
   const colorBuffer = createDiffBuffer(frameCount, colorDiffs);
   await fs.writeFile(`${basePath}_color.bin`, colorBuffer);
 
+  // Write channel diffs
   const channelBuffer = createDiffBuffer(frameCount, channelDiffs, channels);
   await fs.writeFile(`${basePath}_channels.bin`, channelBuffer);
 }
@@ -93,6 +102,7 @@ async function readCache(file) {
   const channels = ['r', 'g', 'b'];
 
   try {
+    // Read all files in parallel, assuming they all exist
     const [compositeBuffer, colorBuffer, channelBuffer] = await Promise.all([
       fs.readFile(`${basePath}_composite.bin`),
       fs.readFile(`${basePath}_color.bin`),
@@ -105,6 +115,7 @@ async function readCache(file) {
       channels: readDiffBuffer(channelBuffer, channels)
     };
   } catch (e) {
+    // This will only trigger if any file read fails
     return null;
   }
 }
