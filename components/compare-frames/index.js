@@ -4,23 +4,29 @@ const { getDiff } = require('./image-processor');
 
 async function diffs(file, frameCount, sort = true) {
   const diffs = await readCache(file) || await compareFrames(file, frameCount);
-  const { composite, channels } = diffs;
-  return sort ?
-    {
+  const { composite, color, channels } = diffs;
+
+  if (sort) {
+    return {
       composite: sortedDiffs(composite),
-      channels: channels ? sortedChannelDiffs(channels) : null
-    } :
-    { composite, channels };
+      channels: channels ? sortedChannelDiffs(channels) : null,
+      color: color ? sortedDiffs(color) : null
+    };
+  } else {
+    return { composite, channels, color };
+  }
 }
 
 async function compareFrames(file, frameCount) {
   const compositeDiffs = {};
   const channelDiffs = { r: {}, g: {}, b: {} };
+  const colorDiffs = {};
   const timecode = [];
 
   // Initialize matrices with self-comparison set to zero
   for (let frame = 1; frame <= frameCount; frame++) {
     compositeDiffs[frame] = { [frame]: 0 };
+    colorDiffs[frame] = { [frame]: 0 };
     ['r', 'g', 'b'].forEach(channel => {
       channelDiffs[channel][frame] = { [frame]: 0 };
     });
@@ -45,7 +51,8 @@ async function compareFrames(file, frameCount) {
               frameA,
               frameB,
               composite: 0,
-              channels: { r: 0, g: 0, b: 0 }
+              channels: { r: 0, g: 0, b: 0 },
+              color: 0
             };
           })
       );
@@ -53,9 +60,12 @@ async function compareFrames(file, frameCount) {
 
     const results = await Promise.all(comparePromises);
 
-    for (const { frameA, frameB, composite, channels } of results) {
-      // Store overall difference (both directions)
+    for (const { frameA, frameB, composite, channels, color } of results) {
+      // Store composite difference (both directions)
       compositeDiffs[frameA][frameB] = compositeDiffs[frameB][frameA] = composite;
+
+      // Store color change difference (both directions)
+      colorDiffs[frameA][frameB] = colorDiffs[frameB][frameA] = color;
 
       // Store all channel differences (both directions)
       for (const channel of ['r', 'g', 'b']) {
@@ -65,15 +75,19 @@ async function compareFrames(file, frameCount) {
     }
   }
 
-  await writeCache(file, compositeDiffs, channelDiffs);
+  await writeCache(file, compositeDiffs, colorDiffs, channelDiffs);
 
-  return { composite: compositeDiffs, channels: channelDiffs };
+  return {
+    composite: compositeDiffs,
+    channels: channelDiffs,
+    color: colorDiffs
+  };
 }
 
-function sortedDiffs(compositeDiffs) {
+function sortedDiffs(diffs) {
   const sortedDiffs = {};
-  for (const f in compositeDiffs) {
-    const sorted = Object.entries(compositeDiffs[f])
+  for (const f in diffs) {
+    const sorted = Object.entries(diffs[f])
       .sort((a, b) => a[1] - b[1]);
     sortedDiffs[f] = sorted;
   }
