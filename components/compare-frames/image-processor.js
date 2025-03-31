@@ -26,6 +26,7 @@ async function loadImage(file, frame) {
 
   const image = await sharp(`cache/frames_${path.basename(file)}/${frame}.png`)
     .resize({ height: 240 })
+    .toColourspace('lab')
     .raw()
     .toBuffer({ resolveWithObject: true });
 
@@ -39,67 +40,78 @@ function validateImages(imgA, imgB) {
   }
 }
 
+// Helper function to scale a value to percentage and format it
+function scaleToPercentage(value, decimal = 2) {
+  return Number.parseFloat((value * 100).toFixed(decimal));
+}
+
 function calculateDifference(imgA, imgB) {
   const totalPixels = imgA.info.width * imgA.info.height;
   let diffSum = 0;
-  let diffSumR = 0, diffSumG = 0, diffSumB = 0;
+  let diffSumL = 0, diffSumA = 0, diffSumB = 0;
 
   // For color change calculation
-  let sumR_A = 0, sumG_A = 0, sumB_A = 0;
-  let sumR_B = 0, sumG_B = 0, sumB_B = 0;
+  let sumL_A = 0, sumA_A = 0, sumB_A = 0;
+  let sumL_B = 0, sumA_B = 0, sumB_B = 0;
 
   for (let i = 0; i < imgA.data.length; i += 3) {
-    const diffR = Math.abs(imgA.data[i] - imgB.data[i]);
-    const diffG = Math.abs(imgA.data[i + 1] - imgB.data[i + 1]);
+    // LAB components
+    // L ranges from 0 to 100
+    // a and b range from -128 to 127
+    const diffL = Math.abs(imgA.data[i] - imgB.data[i]);
+    const diffA = Math.abs(imgA.data[i + 1] - imgB.data[i + 1]);
     const diffB = Math.abs(imgA.data[i + 2] - imgB.data[i + 2]);
 
-    diffSumR += diffR / 255;
-    diffSumG += diffG / 255;
-    diffSumB += diffB / 255;
+    // Normalize differences
+    diffSumL += diffL / 100; // L channel is 0-100
+    diffSumA += diffA / 255; // a channel is -128 to 127, but normalized for simplicity
+    diffSumB += diffB / 255; // b channel is -128 to 127, but normalized for simplicity
 
-    const pixelDiff = (diffR + diffG + diffB) / (255 * 3);
+    // Weighted difference to account for human perception
+    // L (luminance) is weighted more heavily than a and b (color)
+    const pixelDiff = (0.5 * diffL / 100) + (0.25 * diffA / 255) + (0.25 * diffB / 255);
     diffSum += pixelDiff;
 
     // Calculate sum of values for each channel
-    sumR_A += imgA.data[i];
-    sumG_A += imgA.data[i + 1];
+    sumL_A += imgA.data[i];
+    sumA_A += imgA.data[i + 1];
     sumB_A += imgA.data[i + 2];
 
-    sumR_B += imgB.data[i];
-    sumG_B += imgB.data[i + 1];
+    sumL_B += imgB.data[i];
+    sumA_B += imgB.data[i + 1];
     sumB_B += imgB.data[i + 2];
   }
 
-  const avgDiff = Number.parseFloat(((diffSum / totalPixels) * 100).toFixed(2));
-  const avgDiffR = Number.parseFloat(((diffSumR / totalPixels) * 100).toFixed(2));
-  const avgDiffG = Number.parseFloat(((diffSumG / totalPixels) * 100).toFixed(2));
-  const avgDiffB = Number.parseFloat(((diffSumB / totalPixels) * 100).toFixed(2));
+  const avgDiff = scaleToPercentage(diffSum / totalPixels);
+  const avgDiffL = scaleToPercentage(diffSumL / totalPixels);
+  const avgDiffA = scaleToPercentage(diffSumA / totalPixels);
+  const avgDiffB = scaleToPercentage(diffSumB / totalPixels);
 
   // Calculate average colors
-  const avgR_A = sumR_A / totalPixels;
-  const avgG_A = sumG_A / totalPixels;
+  const avgL_A = sumL_A / totalPixels;
+  const avgA_A = sumA_A / totalPixels;
   const avgB_A = sumB_A / totalPixels;
 
-  const avgR_B = sumR_B / totalPixels;
-  const avgG_B = sumG_B / totalPixels;
+  const avgL_B = sumL_B / totalPixels;
+  const avgA_B = sumA_B / totalPixels;
   const avgB_B = sumB_B / totalPixels;
 
-  // Calculate color vector distance (normalized)
+  // Calculate color vector distance in LAB space
   const colorVectorDistance = Math.sqrt(
-    Math.pow((avgR_A - avgR_B) / 255, 2) +
-    Math.pow((avgG_A - avgG_B) / 255, 2) +
+    Math.pow((avgL_A - avgL_B) / 100, 2) +
+    Math.pow((avgA_A - avgA_B) / 255, 2) +
     Math.pow((avgB_A - avgB_B) / 255, 2)
   );
 
   // Scale to percentage (0-100)
-  const colorDiff = Number.parseFloat((colorVectorDistance * 100).toFixed(2));
+  const colorDiff = scaleToPercentage(colorVectorDistance);
 
   return {
     composite: avgDiff,
     color: colorDiff,
     channels: {
-      r: avgDiffR,
-      g: avgDiffG,
+      l: avgDiffL,
+      a: avgDiffA,
       b: avgDiffB
     },
   };
