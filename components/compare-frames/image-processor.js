@@ -69,7 +69,7 @@ function calculateDifference(imgA, imgB) {
 
     // Weighted difference to account for human perception
     // L (luminance) is weighted more heavily than a and b (color)
-    const pixelDiff = (0.5 * diffL / 100) + (0.25 * diffA / 255) + (0.25 * diffB / 255);
+    const pixelDiff = (0.7 * diffL / 100) + (0.15 * diffA / 255) + (0.15 * diffB / 255);
     diffSum += pixelDiff;
 
     // Calculate sum of values for each channel
