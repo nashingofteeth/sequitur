@@ -19,7 +19,7 @@ async function diffs(file, frameCount, sort = true) {
 
 async function compareFrames(file, frameCount) {
   const compositeDiffs = {};
-  const channelDiffs = { r: {}, g: {}, b: {} };
+  const channelDiffs = { l: {}, a: {}, b: {} };
   const colorDiffs = {};
   const timecode = [];
 
@@ -27,7 +27,7 @@ async function compareFrames(file, frameCount) {
   for (let frame = 1; frame <= frameCount; frame++) {
     compositeDiffs[frame] = { [frame]: 0 };
     colorDiffs[frame] = { [frame]: 0 };
-    ['r', 'g', 'b'].forEach(channel => {
+    ['l', 'a', 'b'].forEach(channel => {
       channelDiffs[channel][frame] = { [frame]: 0 };
     });
   }
@@ -51,7 +51,7 @@ async function compareFrames(file, frameCount) {
               frameA,
               frameB,
               composite: 0,
-              channels: { r: 0, g: 0, b: 0 },
+              channels: { l: 0, a: 0, b: 0 },
               color: 0
             };
           })
@@ -68,7 +68,7 @@ async function compareFrames(file, frameCount) {
       colorDiffs[frameA][frameB] = colorDiffs[frameB][frameA] = color;
 
       // Store all channel differences (both directions)
-      for (const channel of ['r', 'g', 'b']) {
+      for (const channel of ['l', 'a', 'b']) {
         channelDiffs[channel][frameA][frameB] =
           channelDiffs[channel][frameB][frameA] = channels[channel];
       }
@@ -96,7 +96,7 @@ function sortedDiffs(diffs) {
 
 function sortedChannelDiffs(channelDiffs) {
   const sorted = {};
-  for (const channel of ['r', 'g', 'b']) {
+  for (const channel of ['l', 'a', 'b']) {
     sorted[channel] = {};
     for (const f in channelDiffs[channel]) {
       sorted[channel][f] = Object.entries(channelDiffs[channel][f])

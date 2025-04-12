@@ -11,7 +11,7 @@ function createDiffBuffer(frameCount, diffs, channels = null) {
   let offset = 4;
 
   if (channels) {
-    // Multi-channel data (like r,g,b)
+    // Multi-channel data (like r,g,b or l,a,b)
     for (let channel of channels) {
       for (let i = 1; i <= frameCount; i++) {
         for (let j = i + 1; j <= frameCount; j++) {
@@ -81,7 +81,7 @@ function readDiffBuffer(buffer, channels = null) {
 async function writeCache(file, compositeDiffs, colorDiffs, channelDiffs) {
   const frameCount = Object.keys(compositeDiffs).length;
   const basePath = `cache/diffs_${path.basename(file)}`;
-  const channels = ['r', 'g', 'b'];
+  const channels = ['l', 'a', 'b'];
 
   // Write composite diffs
   const compositeBuffer = createDiffBuffer(frameCount, compositeDiffs);
@@ -97,9 +97,8 @@ async function writeCache(file, compositeDiffs, colorDiffs, channelDiffs) {
 }
 
 async function readCache(file) {
-  const result = {};
   const basePath = `cache/diffs_${path.basename(file)}`;
-  const channels = ['r', 'g', 'b'];
+  const channels = ['l', 'a', 'b'];
 
   try {
     // Read all files in parallel, assuming they all exist
