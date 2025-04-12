@@ -3,15 +3,13 @@ const args = require("minimist")(process.argv.slice(2));
 const framerate = args.r ? Number.parseFloat(args.r) : 24;
 const initialize = args.i;
 
-exports.framerate = framerate;
-exports.args = args;
-
 // make or remove data folder
 const dir = `${__dirname}/cache`;
 if (initialize && fs.existsSync(dir))
   fs.rmSync(dir, { recursive: true, force: true });
 if (!fs.existsSync(dir)) fs.mkdirSync(dir);
 
+// validate files
 function requireFiles(args) {
   let valid = true;
 
@@ -27,7 +25,11 @@ function requireFiles(args) {
   }
 }
 
-// data functions
+// property exports
+exports.framerate = framerate;
+exports.args = args;
+
+// data function exports
 exports.frameCount = (v = args.v) => {
   requireFiles([v]);
   return require("./components/extract-frames").frames(v);
