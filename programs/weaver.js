@@ -1,4 +1,4 @@
-const seq = require(".."),
+const seq = require("../sequitur"),
   path = require("path");
 
 var videoFiles = seq.args["v"],

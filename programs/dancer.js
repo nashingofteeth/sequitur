@@ -1,4 +1,4 @@
-const seq = require(".."),
+const seq = require("../sequitur"),
   frameCount = seq.frameCount(),
   frameDuration = 1 / seq.framerate;
 
