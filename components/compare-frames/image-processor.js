@@ -23,8 +23,9 @@ async function loadImage(file, frame) {
   if (imageCache.has(key)) {
     return imageCache.get(key);
   }
-
-  const image = await sharp(`cache/frames_${path.basename(file)}/${frame}.png`)
+  const appRoot = path.join(__dirname, '../..');
+  const framePath = `${appRoot}/cache/frames_${path.basename(file)}/${frame}.png`;
+  const image = await sharp(framePath)
     .resize({ height: 240 })
     .toColourspace('lab')
     .raw()

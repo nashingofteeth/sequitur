@@ -3,7 +3,8 @@ const path = require("node:path");
 const wav = require("node-wav");
 
 exports.wave = (file, framerate) => {
-  const outputFile = `cache/wave_${path.basename(file)}.json`;
+  const appRoot = path.join(__dirname, "..");
+  const outputFile = `${appRoot}/cache/wave_${path.basename(file)}.json`;
 
   let wave;
   if (fs.existsSync(outputFile)) {

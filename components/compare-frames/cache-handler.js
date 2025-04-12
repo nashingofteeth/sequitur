@@ -1,6 +1,12 @@
 const fs = require('node:fs').promises;
 const path = require('node:path');
 
+// Helper function to get cache file path
+function getCachePath(file, type) {
+  const appRoot = path.join(__dirname, '../..');
+  return `${appRoot}/cache/diffs_${path.basename(file)}_${type}.bin`;
+}
+
 // Helper function to create buffer for difference matrices
 function createDiffBuffer(frameCount, diffs, channels = null) {
   const triangleSize = (frameCount * (frameCount - 1) / 2);
@@ -80,32 +86,30 @@ function readDiffBuffer(buffer, channels = null) {
 
 async function writeCache(file, compositeDiffs, colorDiffs, channelDiffs) {
   const frameCount = Object.keys(compositeDiffs).length;
-  const basePath = `cache/diffs_${path.basename(file)}`;
   const channels = ['l', 'a', 'b'];
 
   // Write composite diffs
   const compositeBuffer = createDiffBuffer(frameCount, compositeDiffs);
-  await fs.writeFile(`${basePath}_composite.bin`, compositeBuffer);
+  await fs.writeFile(getCachePath(file, 'composite'), compositeBuffer);
 
   // Write color diffs
   const colorBuffer = createDiffBuffer(frameCount, colorDiffs);
-  await fs.writeFile(`${basePath}_color.bin`, colorBuffer);
+  await fs.writeFile(getCachePath(file, 'color'), colorBuffer);
 
   // Write channel diffs
   const channelBuffer = createDiffBuffer(frameCount, channelDiffs, channels);
-  await fs.writeFile(`${basePath}_channels.bin`, channelBuffer);
+  await fs.writeFile(getCachePath(file, 'channels'), channelBuffer);
 }
 
 async function readCache(file) {
-  const basePath = `cache/diffs_${path.basename(file)}`;
   const channels = ['l', 'a', 'b'];
 
   try {
     // Read all files in parallel, assuming they all exist
     const [compositeBuffer, colorBuffer, channelBuffer] = await Promise.all([
-      fs.readFile(`${basePath}_composite.bin`),
-      fs.readFile(`${basePath}_color.bin`),
-      fs.readFile(`${basePath}_channels.bin`)
+      fs.readFile(getCachePath(file, 'composite')),
+      fs.readFile(getCachePath(file, 'color')),
+      fs.readFile(getCachePath(file, 'channels'))
     ]);
 
     return {
