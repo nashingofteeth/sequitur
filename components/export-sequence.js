@@ -2,7 +2,7 @@ const fs = require("mz/fs");
 const path = require("node:path");
 const { execSync } = require("node:child_process");
 
-exports.concat = (sequence, fps, videoFile, audioFile, outFileName, preview, noaudio) => {
+exports.concat = (sequence, fps, videoFile, audioFile, outFileName, preview, noaudio, play) => {
   const appRoot = path.join(__dirname, "..");
   const date = Date.now();
 
@@ -28,6 +28,8 @@ exports.concat = (sequence, fps, videoFile, audioFile, outFileName, preview, noa
   execSync(encodeCmd);
   console.log("exported");
 
-  console.log("playing...");
-  execSync(`ffplay ${filepath}`);
+  if (play) {
+    console.log("playing...");
+    execSync(`ffplay ${filepath}`);
+  }
 };

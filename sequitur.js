@@ -52,7 +52,8 @@ exports.export = (
   o = args.o,
   p = args.p,
   n = args.noaudio,
+  pl = args.play,
 ) => {
   requireFiles([v]);
-  require("./components/export-sequence").concat(sequence, r, v, a, o, p, n);
+  require("./components/export-sequence").concat(sequence, r, v, a, o, p, n, pl);
 };
