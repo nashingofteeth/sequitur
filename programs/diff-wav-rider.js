@@ -1,4 +1,4 @@
-const seq = require("..");
+const seq = require("../sequitur");
 
 (async () => {
   const wave = seq.wave();

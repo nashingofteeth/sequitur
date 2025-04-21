@@ -1,4 +1,4 @@
-const seq = require("..");
+const seq = require("../sequitur");
 
 (async () => {
   if (Object.keys(seq.args).length < 2) {

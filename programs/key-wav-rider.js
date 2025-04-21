@@ -1,4 +1,4 @@
-const seq = require("..");
+const seq = require("../sequitur");
 const frameCount = seq.frameCount();
 const wave = seq.wave();
 const frameDuration = 1 / seq.framerate;
