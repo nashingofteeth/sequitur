@@ -61,5 +61,9 @@ function sequence(wave, diffs) {
     currentFrame = nextFrame;
   }
 
+  const framesUsed = Object.keys(occurrence).filter(frame => occurrence[frame].count > 0).length;
+  const percentageUsed = (framesUsed / frameCount * 100).toFixed(2);
+  console.log(`Frames used: ${framesUsed}/${frameCount} (${percentageUsed}%)`);
+
   seq.export(sequence);
 }
