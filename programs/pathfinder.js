@@ -9,14 +9,14 @@ const seq = require("../sequitur");
 function sequence(diffs) {
   const used = [];
   const frameCount = Object.keys(diffs).length;
-  const firstFrame = Math.floor(Math.random() * frameCount) + 1;
+  const firstFrame = seq.args.start ?? Math.floor(Math.random() * frameCount) + 1;
   const sequence = [[firstFrame, 1 / seq.framerate]];
 
   for (f in diffs) used[f] = false;
   used[firstFrame] = true;
 
   for (i = 1; i < frameCount; i++) {
-    let key = 1;
+    let key = seq.args.key ?? 1;
     let frame = diffs[sequence[i - 1][0]][key][0];
 
     while (used[frame]) {
