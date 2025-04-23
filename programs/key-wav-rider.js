@@ -3,10 +3,10 @@ const frameCount = seq.frameCount();
 const wave = seq.wave();
 const frameDuration = 1 / seq.framerate;
 
-const threshold = seq.args.threshold;
+const threshold = seq.args.threshold || 0.0;
 
 // Define the range to map values to (after thresholding)
-const minOutput = threshold ?? 0.0;
+const minOutput = threshold;
 const maxOutput = 1.0;
 
 const sequence = [];
