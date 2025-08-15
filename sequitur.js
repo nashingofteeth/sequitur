@@ -54,6 +54,11 @@ exports.export = (
   n = args.noaudio,
   pl = args.play,
 ) => {
+  if (args['dry-run']) {
+    console.log('Dry run - sequence not exported');
+    return;
+  }
+  
   requireFiles([v]);
   
   // Extract preview frames if preview option is enabled

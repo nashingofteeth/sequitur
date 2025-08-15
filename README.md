@@ -13,3 +13,4 @@ frame-by-frame video sequencer.
 - `-p` export lossy preview file
 - `-i` clear cache
 - `--no-audio` export video without audio
+- `--dry-run` don't export sequence
