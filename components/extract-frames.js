@@ -2,24 +2,25 @@ const fs = require("mz/fs");
 const path = require("node:path");
 const { execSync } = require("node:child_process");
 
-exports.frames = (file) => {
-  let frameCount = countFrames(file);
+exports.frames = (file, preview = false) => {
+  let frameCount = countFrames(file, preview);
 
   if (!frameCount) {
-    extractFrames(file);
-    frameCount = countFrames(file);
+    extractFrames(file, preview);
+    frameCount = countFrames(file, preview);
   }
 
   return frameCount;
 };
 
-function getFramesDir(file) {
+function getFramesDir(file, preview = false) {
   const appRoot = path.join(__dirname, '..');
-  return `${appRoot}/cache/frames_${path.basename(file)}/`;
+  const suffix = preview ? '_preview' : '';
+  return `${appRoot}/cache/frames_${path.basename(file)}${suffix}/`;
 }
 
-function countFrames(file) {
-  const dir = getFramesDir(file);
+function countFrames(file, preview = false) {
+  const dir = getFramesDir(file, preview);
   if (fs.existsSync(dir)) {
     const files = fs.readdirSync(dir);
     if (files.length < 2) return false;
@@ -29,12 +30,18 @@ function countFrames(file) {
   return false;
 }
 
-function extractFrames(file) {
-  const dir = getFramesDir(file);
+function extractFrames(file, preview = false) {
+  const dir = getFramesDir(file, preview);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir);
 
-  console.log("extracting frames...");
-  execSync(
-    `ffmpeg -i ${file.replace(" ", "\\ ")} ${dir}%d.png -y`,
-  );
+  const logMsg = preview ? "extracting preview frames..." : "extracting frames...";
+  console.log(logMsg);
+  
+  let ffmpegCmd = `ffmpeg -i ${file.replace(" ", "\\ ")}`;
+  if (preview) {
+    ffmpegCmd += ` -vf scale=-1:240`;
+  }
+  ffmpegCmd += ` ${dir}%d.png -y`;
+  
+  execSync(ffmpegCmd);
 }

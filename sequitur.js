@@ -55,5 +55,11 @@ exports.export = (
   pl = args.play,
 ) => {
   requireFiles([v]);
+  
+  // Extract preview frames if preview option is enabled
+  if (p) {
+    require("./components/extract-frames").frames(v, true);
+  }
+  
   require("./components/export-sequence").concat(sequence, r, v, a, o, p, n, pl);
 };

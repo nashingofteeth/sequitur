@@ -8,18 +8,18 @@ exports.concat = (sequence, fps, videoFile, audioFile, outFileName, preview, noa
 
   let encodeCmd = `ffmpeg -f concat -i ${appRoot}/cache/sequence_${date}.txt -c:v prores_ks -profile:v 3 -pix_fmt yuv444p10le -qscale:v 8 -vendor apl0 -r ${fps}`;
 
-  if (preview) encodeCmd += " -vf scale=-1:240";
-
   const filename = outFileName || `sequitur_${date}`;
   const filepath = `${filename}.mov`;
   encodeCmd += ` ${filepath} -y`;
 
   if (audioFile && !noaudio) encodeCmd += ` -c:a pcm_s16le -i ${audioFile.replace(" ", "\\ ")}`;
 
+  // Generate sequence file with appropriate frame directory
+  const framesDirSuffix = preview ? '_preview' : '';
   let seqStr = "";
   if (Array.isArray(sequence)) {
     for (f in sequence) {
-      seqStr += `file 'frames_${path.basename(videoFile)}/${sequence[f][0]}.png'\nduration ${sequence[f][1]}\n`;
+      seqStr += `file 'frames_${path.basename(videoFile)}${framesDirSuffix}/${sequence[f][0]}.png'\nduration ${sequence[f][1]}\n`;
     }
   } else seqStr = sequence;
   fs.writeFileSync(`${appRoot}/cache/sequence_${date}.txt`, seqStr);
