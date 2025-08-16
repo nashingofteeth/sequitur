@@ -12,7 +12,7 @@ function sequence(wave, diffs) {
   const frameCount = Object.keys(diffs).length;
   let currentFrame = "1";
   const occurrence = [];
-  const diffLimit = seq.args.limit || 1; // set between 0 and 1
+  const diffRange = seq.args["diff-range"] || 1; // set between 0 and 1
   const margin = seq.args.margin || 1; // set between 1 and frameCount
 
   for (const f in diffs) {
@@ -29,7 +29,7 @@ function sequence(wave, diffs) {
     const maxDistance = seq.args.stretch
       ? margin + frameCount * amplitude
       : frameCount;
-    let nextFrameIndex = Math.floor((frameCount - 1) * (amplitude * diffLimit)); // use amplitude as diffs index
+    let nextFrameIndex = Math.floor((frameCount - 1) * (amplitude * diffRange)); // use amplitude as diffs index
     let nextFrame = currentDiffs[String(nextFrameIndex)][0];
 
     let forward = true;
