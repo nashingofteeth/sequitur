@@ -1,6 +1,7 @@
 const seq = require("../sequitur");
 
 (async () => {
+  console.log('progressing forward', seq.args["progress-forward"]);
   const wave = seq.wave();
   const { composite: diffs } = await seq.diffs();
 
@@ -16,8 +17,9 @@ function sequence(wave, diffs) {
   const jumpThreshold = seq.args["jump-threshold"] || 0.1; // minimum audio jump to trigger cut
   const maxDifference = seq.args["max-difference"] || 1.0; // max frame difference proportion (0-1)
   const volumeThreshold = seq.args["volume-threshold"] || 0.0; // minimum volume to consider
+  const progressForward = seq.args["progress-forward"] || false; // advance frame by frame when not jumping
   
-  console.log(`Jump threshold: ${jumpThreshold}, Max difference: ${maxDifference}, Volume threshold: ${volumeThreshold}`);
+  console.log(`Jump threshold: ${jumpThreshold}, Max difference: ${maxDifference}, Volume threshold: ${volumeThreshold}, Progress forward: ${progressForward}`);
   
   let previousAmplitude = 0;
   
@@ -44,7 +46,11 @@ function sequence(wave, diffs) {
       
       console.log(`Audio jump: ${audioJump.toFixed(3)} -> Diff level: ${targetDifferenceLevel.toFixed(3)} -> Frame: ${nextFrame}`);
     } else {
-      // No significant jump or volume too low - stay on current frame
+      // No significant jump or volume too low
+      if (progressForward) {
+        // Advance to next frame
+        currentFrame = String(Math.min(Number(currentFrame) + 1, frameCount));
+      }
       sequence.push([currentFrame, 1 / seq.framerate]);
     }
     
