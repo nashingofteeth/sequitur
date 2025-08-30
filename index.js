@@ -1,7 +1,6 @@
-#!/usr/bin/env node
+#!/usr/bin/env node --max-old-space-size=16384
 
 const fs = require('fs');
-const path = require('path');
 const minimist = require('minimist');
 const args = minimist(process.argv.slice(2));
 
