@@ -1,4 +1,4 @@
-#!/usr/bin/env node --max-old-space-size=16384
+#!/usr/bin/env node
 
 const fs = require('fs');
 const minimist = require('minimist');
