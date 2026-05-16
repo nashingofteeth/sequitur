@@ -35,6 +35,6 @@
 - `-a` - Audio file input (.wav required)
 - `-r` - Framerate (default: 24fps)
 - `-o` - Output filename
-- `-p` - Export lossy preview
+- `-p` - Preview with ffplay (no file written)
 - `-i` - Clear cache
 - `--no-audio` - Export without audio

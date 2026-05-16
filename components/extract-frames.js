@@ -37,11 +37,7 @@ function extractFrames(file, preview = false) {
   const logMsg = preview ? "extracting preview frames..." : "extracting frames...";
   console.log(logMsg);
   
-  let ffmpegCmd = `ffmpeg -i ${file.replace(" ", "\\ ")}`;
-  if (preview) {
-    ffmpegCmd += ` -vf scale=-1:240`;
-  }
-  ffmpegCmd += ` ${dir}%d.png -y`;
+  let ffmpegCmd = `ffmpeg -i ${file.replace(" ", "\\ ")} ${dir}%d.png -y`;
   
   execSync(ffmpegCmd);
 }
