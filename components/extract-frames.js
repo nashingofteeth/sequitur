@@ -1,6 +1,6 @@
-const fs = require("mz/fs");
+const fs = require("node:fs");
 const path = require("node:path");
-const { execSync } = require("node:child_process");
+const { execFileSync } = require("node:child_process");
 
 exports.frames = (file, preview = false) => {
   let frameCount = countFrames(file, preview);
@@ -8,6 +8,10 @@ exports.frames = (file, preview = false) => {
   if (!frameCount) {
     extractFrames(file, preview);
     frameCount = countFrames(file, preview);
+  }
+
+  if (!frameCount) {
+    throw new Error(`Frame extraction produced no frames for: ${file}`);
   }
 
   return frameCount;
@@ -31,13 +35,18 @@ function countFrames(file, preview = false) {
 }
 
 function extractFrames(file, preview = false) {
+  if (!file || !fs.existsSync(file)) {
+    throw new Error(`Video file not found: ${file}`);
+  }
   const dir = getFramesDir(file, preview);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
   const logMsg = preview ? "extracting preview frames..." : "extracting frames...";
   console.log(logMsg);
-  
-  let ffmpegCmd = `ffmpeg -i ${file.replace(" ", "\\ ")} ${dir}%d.png -y`;
-  
-  execSync(ffmpegCmd);
+
+  try {
+    execFileSync("ffmpeg", ["-y", "-i", file, `${dir}%d.png`], { stdio: "inherit" });
+  } catch (error) {
+    throw new Error(`ffmpeg frame extraction failed for ${file}: ${error.message}`);
+  }
 }
