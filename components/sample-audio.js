@@ -1,4 +1,4 @@
-const fs = require("mz/fs");
+const fs = require("node:fs");
 const path = require("node:path");
 const wav = require("node-wav");
 
@@ -6,52 +6,83 @@ exports.wave = (file, framerate) => {
   const appRoot = path.join(__dirname, "..");
   const outputFile = `${appRoot}/cache/wave_${path.basename(file)}.json`;
 
-  let wave;
   if (fs.existsSync(outputFile)) {
-    wave = JSON.parse(fs.readFileSync(outputFile));
-  } else {
-    wave = resampleAudio(file, framerate);
-    fs.writeFileSync(outputFile, JSON.stringify(wave));
+    try {
+      const cached = JSON.parse(fs.readFileSync(outputFile, "utf8"));
+      // Normalize legacy string values to numbers.
+      if (Array.isArray(cached)) return cached.map(Number);
+      return cached;
+    } catch (error) {
+      console.log(`Cached wave file is corrupt, regenerating: ${error.message}`);
+    }
   }
 
+  const wave = resampleAudio(file, framerate);
+  fs.writeFileSync(outputFile, JSON.stringify(wave));
   return wave;
 };
 
 function sampleAudio(file) {
   console.log("sampling audio...");
 
-  const buffer = fs.readFileSync(file);
-  const data = wav.decode(buffer);
+  let buffer;
+  try {
+    buffer = fs.readFileSync(file);
+  } catch (error) {
+    throw new Error(`Audio file not found: ${file}`);
+  }
+
+  let data;
+  try {
+    // node-wav views buf.buffer without respecting byteOffset, so
+    // file-read buffers from the pool can misalign Int16Array views.
+    // Copy to a zero-offset buffer first.
+    const aligned = Buffer.from(
+      buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.length),
+    );
+    data = wav.decode(aligned);
+  } catch (error) {
+    throw new Error(`Could not decode ${file} (16-bit PCM .wav required): ${error.message}`);
+  }
+
+  if (!data || !data.channelData || data.channelData.length === 0) {
+    throw new Error(`No audio channels found in: ${file}`);
+  }
 
   return data;
 }
 
 function resampleAudio(file, fps) {
-  let sample = sampleAudio(file);
-  const data = sample.channelData[0];
-  const step = Math.round(sample.sampleRate / fps);
-  let count = 0;
+  const sample = sampleAudio(file);
+  const channels = sample.channelData;
+  const numChannels = channels.length;
+  const length = channels[0].length;
+  const step = Math.max(1, Math.round(sample.sampleRate / fps));
+
   const resampled = [];
-  const conformed = [];
-  let min = 0;
-  let max = 0;
+  let peak = 0;
 
-  for (s in data) {
-    min = data[s] > min ? data[s] : min;
-    count++;
-    if (count === step) {
-      count = 0;
-      sample = min;
-      resampled.push(sample);
-
-      max = sample > max ? sample : max;
-      min = 0;
+  // Mono-mix all channels, then take RMS energy per frame window
+  // (including the trailing partial window).
+  for (let start = 0; start < length; start += step) {
+    const end = Math.min(start + step, length);
+    let sumSquares = 0;
+    let count = 0;
+    for (let c = 0; c < numChannels; c++) {
+      const channel = channels[c];
+      for (let i = start; i < end; i++) {
+        const v = channel[i] || 0;
+        sumSquares += v * v;
+        count++;
+      }
     }
+    const rms = count > 0 ? Math.sqrt(sumSquares / count) : 0;
+    resampled.push(rms);
+    if (rms > peak) peak = rms;
   }
 
-  for (s in resampled) {
-    conformed.push((resampled[s] * (1 / max)).toFixed(4));
-  }
+  // Silent file: avoid divide-by-zero, return zeros as numbers.
+  if (peak === 0) return resampled.map(() => 0);
 
-  return conformed;
+  return resampled.map((v) => Number((v / peak).toFixed(4)));
 }
