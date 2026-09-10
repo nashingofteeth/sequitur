@@ -44,10 +44,16 @@ exports.concat = (sequence, fps, videoFile, audioFile, outFileName, preview, noa
     console.log("previewing...");
     if (audioFile && !noaudio) {
       // Pipe ffmpeg output to ffplay. Quoted to prevent shell injection.
+      // Realtime-safe: downscaled video (PNG decode + MJPEG encode must
+      // sustain fps), explicit output framerate, uncompressed audio
+      // passthrough (no re-encode stutter), and -shortest so trailing
+      // silence can't desync the pipe. The -vf scale is a safety net for
+      // stale full-res preview caches; fresh caches are already 540p.
       const cmd =
         `ffmpeg -f concat -i ${shellQuote(seqPath)} -i ${shellQuote(audioFile)}` +
-        ` -c:v mjpeg -f matroska - | ffplay -`;
-      execSync(cmd);
+        ` -map 0:v -map 1:a -vf scale=-2:540 -r ${String(fps)}` +
+        ` -c:v mjpeg -q:v 5 -c:a pcm_s16le -shortest -f matroska - | ffplay -`;
+      execSync(cmd, { stdio: "inherit" });
     } else {
       execFileSync("ffplay", ["-f", "concat", "-i", seqPath], { stdio: "inherit" });
     }
