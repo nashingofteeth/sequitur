@@ -3,24 +3,22 @@ const frameCount = seq.frameCount();
 const wave = seq.wave();
 const frameDuration = 1 / seq.framerate;
 
-const threshold = seq.args.threshold || 0.0;
+const threshold = seq.args.threshold ? Number(seq.args.threshold) : 0.0;
 
-// Define the range to map values to (after thresholding)
-const minOutput = threshold;
-const maxOutput = 1.0;
+if (!Number.isFinite(threshold) || threshold < 0 || threshold >= 1) {
+  console.error(`Error: invalid threshold ${seq.args.threshold} (must be 0..<1)`);
+  process.exit(1);
+}
 
 const sequence = [];
 
 for (let i = 0; i < wave.length - 1; i++) {
-  let level = Number.parseFloat(wave[i]);
+  const level = Number.parseFloat(wave[i]);
 
-  if (level < threshold) {
-    level = 0;
-  }
+  // Silence below the threshold; rescale the rest evenly onto 0..1.
+  const normalizedLevel = level < threshold ? 0 : (level - threshold) / (1 - threshold);
 
-  const normalizedLevel = (level - threshold) / (1 - threshold) * (maxOutput - minOutput) + minOutput;
-
-  const selectedFrame = Math.ceil((frameCount - 1) * normalizedLevel);
+  const selectedFrame = Math.min(Math.floor(normalizedLevel * frameCount), frameCount - 1);
 
   sequence.push([selectedFrame + 1, frameDuration]);
 }

@@ -7,6 +7,10 @@ const seq = require("../sequitur");
   sequence(wave, diffs);
 })();
 
+function clampIndex(index, frameCount) {
+  return Math.min(Math.max(index, 0), frameCount - 1);
+}
+
 function sequence(wave, diffs) {
   const sequence = [];
   const frameCount = Object.keys(diffs).length;
@@ -25,11 +29,15 @@ function sequence(wave, diffs) {
   for (const a in wave) {
     const amplitude = Number.parseFloat(wave[a]);
     const currentDiffs = diffs[currentFrame];
+    if (!currentDiffs) {
+      console.error(`Error: unknown current frame ${currentFrame}`);
+      process.exit(1);
+    }
     const playhead = Math.ceil(a * (frameCount / wave.length));
     const maxDistance = seq.args.stretch
       ? margin + frameCount * amplitude
       : frameCount;
-    let nextFrameIndex = Math.floor((frameCount - 1) * (amplitude * diffRange)); // use amplitude as diffs index
+    let nextFrameIndex = clampIndex(Math.floor((frameCount - 1) * (amplitude * diffRange)), frameCount); // use amplitude as diffs index
     let nextFrame = currentDiffs[String(nextFrameIndex)][0];
 
     let forward = true;
@@ -44,8 +52,10 @@ function sequence(wave, diffs) {
     ) {
       if (forward && targetIndex + distanceForward + 1 < frameCount - 1) {
         nextFrameIndex = targetIndex + ++distanceForward;
-      } else if (targetIndex - distanceBack + 1 > 0) {
+      } else if (targetIndex - distanceBack - 1 >= 0) {
         nextFrameIndex = targetIndex - ++distanceBack;
+      } else {
+        break;
       }
 
       forward = !forward;

@@ -4,8 +4,14 @@ const seq = require("../sequitur"),
 
 var sequence = [],
   sections = {},
-  divisor = seq.args["divisor"],
-  sectionLength = Math.floor(frameCount / divisor);
+  divisor = seq.args["divisor"] ? Number(seq.args["divisor"]) : 8;
+
+if (!Number.isFinite(divisor) || divisor < 1) {
+  console.error(`Error: invalid divisor: ${seq.args["divisor"]}`);
+  process.exit(1);
+}
+
+var sectionLength = Math.max(1, Math.floor(frameCount / divisor));
 
 var s = 0;
 while (s < frameCount) {
@@ -14,18 +20,15 @@ while (s < frameCount) {
   s += sectionLength;
 }
 
-for (f = 0; f < frameCount; f++) {
+for (let f = 0; f < frameCount; f++) {
   let placement = Math.floor(f / sectionLength);
   sections[placement].push(f);
 }
-if ((!frameCount / divisor) % 1 === 0) {
-  delete sections[Object.keys(sections)[Object.keys(sections).length - 1]];
-}
 
 Object.keys(sections).forEach((key) => {
-  for (i = 0; i < sectionLength; i++) {
+  for (let i = 0; i < sections[key].length; i++) {
     sequence.push([
-      sections[key][getRandomInt(0, sectionLength)] + 1,
+      sections[key][getRandomInt(0, sections[key].length)] + 1,
       frameDuration,
     ]);
   }
