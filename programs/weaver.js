@@ -1,49 +1,25 @@
-const seq = require("../sequitur"),
-  path = require("path");
+const seq = require("../sequitur");
+const { loadVideos, interleave, normalizeVideoFiles } = require("../components/weave");
 
-var videoFiles = seq.args["v"],
-  duration = 1 / seq.framerate,
-  videos = {},
-  videoName = "",
-  frameCount = 0;
+const videoFiles = seq.args["v"];
+const duration = 1 / seq.framerate;
+const videos = loadVideos(videoFiles, (f) => seq.frameCount(f));
 
-for (v in videoFiles) {
-  videoName = path.basename(videoFiles[v]);
-  frameCount = seq.frameCount(videoFiles[v]);
-  videos[v] = {};
-  videos[v].name = videoName;
-  videos[v].frames = frameCount;
+if (videos.length === 0) {
+  console.error("No video files provided (-v)");
+  process.exit(1);
 }
 
-var longest = "0";
-for (v in videos) if (videos[v].frames > videos[longest].frames) longest = v;
+// Preserve the legacy `overwrite` flag: it advanced the outer index once
+// per non-longest video, i.e. a stride of videos.length. `--stride N`
+// sets the step explicitly.
+const stride = seq.args["stride"]
+  ? Number.parseInt(seq.args["stride"], 10)
+  : seq.args["overwrite"] ? normalizeVideoFiles(videoFiles).length : 1;
 
-sequence = "";
-for (i = 1; i <= videos[longest].frames; i++) {
-  for (v in videos) {
-    if (i > videos[v].frames && !seq.args["stretch"]) continue;
-
-    if (seq.args["stretch"] && videos[v] != videos[longest])
-      frame = Math.ceil((i / videos[longest].frames) * videos[v].frames);
-    else frame = i;
-
-    sequence +=
-      "file 'frames_" +
-      videos[v].name +
-      "/" +
-      frame +
-      ".png'\n" +
-      "duration " +
-      duration +
-      "\n";
-
-    if (
-      seq.args["overwrite"] &&
-      videos[v] != videos[longest] &&
-      i < videos[v].frames
-    )
-      i++;
-  }
-}
+const sequence = interleave(videos, duration, {
+  stretch: Boolean(seq.args["stretch"]),
+  stride,
+});
 
 seq.export(sequence);

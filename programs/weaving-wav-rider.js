@@ -1,39 +1,16 @@
-const seq = require("../sequitur"),
-  path = require("path");
+const seq = require("../sequitur");
+const { loadVideos, weaveWave } = require("../components/weave");
 
-var videoFiles = seq.args["v"],
-  wave = seq.wave(),
-  duration = 1 / seq.framerate,
-  videos = {},
-  videoName = "",
-  frameCount = 0;
+const videoFiles = seq.args["v"];
+const wave = seq.wave();
+const duration = 1 / seq.framerate;
+const videos = loadVideos(videoFiles, (f) => seq.frameCount(f));
 
-for (v in videoFiles) {
-  videoName = path.basename(videoFiles[v]);
-  frameCount = seq.frameCount(videoFiles[v]);
-  videos[v] = {};
-  videos[v].name = videoName;
-  videos[v].frames = frameCount;
+if (videos.length === 0) {
+  console.error("No video files provided (-v)");
+  process.exit(1);
 }
 
-sequence = "";
-sequenceLength = wave.length;
-for (i = 1; i <= sequenceLength; i++) {
-  for (v in videos) {
-    if (v != 0 && parseFloat(wave[i]) < 0.01) continue;
-    if (v != 0) i++;
-    frame = Math.ceil(i * (videos[v].frames / sequenceLength));
-
-    sequence +=
-      "file 'frames_" +
-      videos[v].name +
-      "/" +
-      frame +
-      ".png'\n" +
-      "duration " +
-      duration +
-      "\n";
-  }
-}
+const sequence = weaveWave(videos, wave, duration);
 
 seq.export(sequence);

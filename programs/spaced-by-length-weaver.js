@@ -1,46 +1,15 @@
-const seq = require("../sequitur"),
-  path = require("path");
+const seq = require("../sequitur");
+const { loadVideos, spaceByLength } = require("../components/weave");
 
-var videoFiles = seq.args["v"],
-  duration = 1 / seq.framerate,
-  videos = {},
-  videoName = "",
-  frameCount = 0;
+const videoFiles = seq.args["v"];
+const duration = 1 / seq.framerate;
+const videos = loadVideos(videoFiles, (f) => seq.frameCount(f));
 
-for (v in videoFiles) {
-  videoName = path.basename(videoFiles[v]);
-  frameCount = seq.frameCount(videoFiles[v]);
-  videos[v] = {};
-  videos[v].name = videoName;
-  videos[v].frames = frameCount;
+if (videos.length === 0) {
+  console.error("No video files provided (-v)");
+  process.exit(1);
 }
 
-var sequenceLength = 0;
-for (v in videos) sequenceLength += videos[v].frames;
-
-var sequence = "",
-  sequenceArr = [];
-
-for (v in videos) {
-  for (i = 0; i < videos[v].frames; i++) {
-    let position = sequenceLength * (i / videos[v].frames);
-    sequenceArr.push([position, videos[v].name, i + 1]);
-  }
-}
-
-sequenceArr.sort(function (a, b) {
-  return a[0] - b[0];
-});
-
-for (f in sequenceArr)
-  sequence +=
-    "file 'frames_" +
-    sequenceArr[f][1] +
-    "/" +
-    sequenceArr[f][2] +
-    ".png'\n" +
-    "duration " +
-    duration +
-    "\n";
+const sequence = spaceByLength(videos, duration);
 
 seq.export(sequence);
